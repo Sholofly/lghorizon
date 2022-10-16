@@ -38,12 +38,12 @@ Next countries do have the same familiar web interface but aren't supported due 
 
 - The energy mode needs to be set to high, otherwise you are not able to switch the device on in the media player.
 
-## HACS Installation
+<!-- ## HACS Installation
 
 1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites)
 2. In the integrations tab, search for ArrisDCX960.
 3. Install the Integration.
-4. Configure the integration using the HA integration page, Search for ArrisDCX960.
+4. Configure the integration using the HA integration page, Search for ArrisDCX960. -->
 
 ## Manual installation
 

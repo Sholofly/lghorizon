@@ -1,13 +1,12 @@
 {
-  "title": "Arris DCX960",
+  "title": "LG Horizon",
   "config": {
     "step": {
       "user": {
         "data": {
           "username": "Gebruikersnaam",
           "password": "Wachtwoord",
-          "country_code": "Provider",
-          "omit_channel_quality": "Strip HD van kanaalnamen"
+          "country_code": "Provider"
         }
       }
     },

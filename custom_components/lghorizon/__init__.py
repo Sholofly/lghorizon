@@ -1,4 +1,4 @@
-"""The arrisdcx960 integration."""
+"""The lghorizon integration."""
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
@@ -15,11 +15,11 @@ from .const import (
     COUNTRY_CODES,
 )
 
-from arris_dcx960 import ArrisDCX960
+from lghorizon import LGHorizonApi
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["media_player", "sensor"]
+PLATFORMS = ["media_player"]
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
@@ -36,8 +36,8 @@ CONFIG_SCHEMA = vol.Schema(
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up arrisdcx960 from a config entry."""
-    api = ArrisDCX960(
+    """Set up lghorizon api from a config entry."""
+    api = LGHorizonApi(
         entry.data[CONF_USERNAME],
         entry.data[CONF_PASSWORD],
         COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]],

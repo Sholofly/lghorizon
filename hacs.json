@@ -1,5 +1,5 @@
 {
-    "name": "Arris DCX960 (Ziggo, Telenet, Magenta, UPC, Virgin)",
+    "name": "LG Horizon",
     "country": ["NL", "BE", "CH", "GB", "AT"],
     "render_readme": true,
     "homeassistant": "2021.5.0"
