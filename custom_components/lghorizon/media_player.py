@@ -67,61 +67,61 @@ async def async_setup_entry(
 
     SCHEMA = cv.make_entity_service_schema({})
 
-    def service_handle_custom(call):
-        """Handle the custom services."""
-        entity_ids = call.data.get("entity_id")
-        entity_id = entity_ids[0]
-        _LOGGER.debug("Custom Service for " + entity_id + " - " + call.service)
+    # def service_handle_custom(call):
+    #     """Handle the custom services."""
+    #     entity_ids = call.data.get("entity_id")
+    #     entity_id = entity_ids[0]
+    #     _LOGGER.debug("Custom Service for " + entity_id + " - " + call.service)
 
-        for player in players:
-            if player.entity_id == entity_id:
-                if call.service == RECORD:
-                    player.api.settop_boxes[player.box_id].record()
-                elif call.service == REWIND:
-                    player.api.settop_boxes[player.box_id].rewind()
-                elif call.service == FAST_FORWARD:
-                    player.api.settop_boxes[player.box_id].fastforward()
+    #     for player in players:
+    #         if player.entity_id == entity_id:
+    #             if call.service == RECORD:
+    #                 player.api.settop_boxes[player.box_id].record()
+    #             elif call.service == REWIND:
+    #                 player.api.settop_boxes[player.box_id].rewind()
+    #             elif call.service == FAST_FORWARD:
+    #                 player.api.settop_boxes[player.box_id].fastforward()
 
-    hass.services.async_register(
-        DOMAIN,
-        RECORD,
-        service_handle_custom,
-        schema=SCHEMA,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        REWIND,
-        service_handle_custom,
-        schema=SCHEMA,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        FAST_FORWARD,
-        service_handle_custom,
-        schema=SCHEMA,
-    )
+    # hass.services.async_register(
+    #     DOMAIN,
+    #     RECORD,
+    #     service_handle_custom,
+    #     schema=SCHEMA,
+    # )
+    # hass.services.async_register(
+    #     DOMAIN,
+    #     REWIND,
+    #     service_handle_custom,
+    #     schema=SCHEMA,
+    # )
+    # hass.services.async_register(
+    #     DOMAIN,
+    #     FAST_FORWARD,
+    #     service_handle_custom,
+    #     schema=SCHEMA,
+    # )
 
-    key_schema = cv.make_entity_service_schema(
-        {vol.Required(CONF_REMOTE_KEY): cv.string}
-    )
+    # key_schema = cv.make_entity_service_schema(
+    #     {vol.Required(CONF_REMOTE_KEY): cv.string}
+    # )
 
-    def service_handle_press_remote_key(service_call):
-        """Handle button press service"""
-        entity_ids = service_call.data.get("entity_id")
-        entity_id = entity_ids[0]
-        remote_key = service_call.data[CONF_REMOTE_KEY]
-        for player in players:
-            if player.entity_id == entity_id:
-                player.api.settop_boxes[player.unique_id]._send_key_to_box(
-                    f"{remote_key}"
-                )
+    # def service_handle_press_remote_key(service_call):
+    #     """Handle button press service"""
+    #     entity_ids = service_call.data.get("entity_id")
+    #     entity_id = entity_ids[0]
+    #     remote_key = service_call.data[CONF_REMOTE_KEY]
+    #     for player in players:
+    #         if player.entity_id == entity_id:
+    #             player.api.settop_boxes[player.unique_id]._send_key_to_box(
+    #                 f"{remote_key}"
+    #             )
 
-    hass.services.async_register(
-        DOMAIN,
-        REMOTE_KEY_PRESS,
-        service_handle_press_remote_key,
-        schema=key_schema,
-    )
+    # hass.services.async_register(
+    #     DOMAIN,
+    #     REMOTE_KEY_PRESS,
+    #     service_handle_press_remote_key,
+    #     schema=key_schema,
+    # )
 
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
