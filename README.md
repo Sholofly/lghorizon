@@ -1,6 +1,15 @@
-# LG Horizon Settop boxes (Ziggo, Telenet, Magenta, UPC, Virgin)
+# WARNING: This component replaces the Arris DCX960 component. For now it only supports Ziggo (NL) 
 
-# WARNING: This is a beta version. It only supports Ziggo (NL). 
+### DISCLAIMER:
+
+- It's not in HACS yet, So manual installation required. (it's just download and copy paste)
+- It only supports Ziggo until I figured out the other login sequences for Telenet, Magenta, UPC, Virgin
+- It doesn't support services yet
+- It doesn't support recordings yet
+- Submit feature requests and errors here: https://github.com/Sholofly/lghorizon/
+
+<!-- # LG Horizon Settop boxes (Ziggo, Telenet, Magenta, UPC, Virgin) -->
+# LG Horizon Settop boxes (Ziggo)
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 <br><a href="https://www.buymeacoffee.com/sholofly" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-black.png" width="150px" height="35px" alt="Buy Me A Coffee" style="height: 35px !important;width: 150px !important;" ></a>
