@@ -20,20 +20,6 @@ A media player component for Home Assistant that creates a media player and a se
 | Great Britain | Virgin Media | [Virgin TV 360](https://www.virginmedia.com/shop/tv/virgin-tv-360) | yes
 | Ireland | Virgin Media | [360 box](https://www.virginmedia.ie/virgintv360support/) | no (testers wanted!) -->
 
-
-
-## Not supported countries/providers
-Next countries do have the same familiar web interface but aren't supported due to the use of other hardware than the Arris box. 
-| Country | Web app URL 
-| --- | ----------- 
-| Chech Republic | [Horizon TV](https://www.horizon.tv/cs_cz)
-| Romania | [Horizon TV](https://www.horizon.tv/ro_ro)
-| Slovakia | [Horizon TV](https://www.horizon.tv/sk_sk)
-| Germany | [Unknown](https://www.horizon.tv/de_de) | no (testers wanted!)
-| Poland | UPC PL | [Unknown](https://www.horizon.tv/pl_pl.html) | no (testers wanted!)
-| Hungary | Vodafone Hungary | [Unknown](https://www.horizon.tv/hu_hu.html) | no (testers wanted!)
-
-
 ## Prerequisites
 
 - The energy mode needs to be set to high, otherwise you are not able to switch the device on in the media player.
@@ -41,19 +27,19 @@ Next countries do have the same familiar web interface but aren't supported due 
 <!-- ## HACS Installation
 
 1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites)
-2. In the integrations tab, search for ArrisDCX960.
+2. In the integrations tab, search for LG Horizon.
 3. Install the Integration.
-4. Configure the integration using the HA integration page, Search for ArrisDCX960. -->
+4. Configure the integration using the HA integration page, Search for LG Horizon. -->
 
 ## Manual installation
 
 1. Open the directory (folder) for your HA configuration (where you find configuration.yaml).
 2. If you do not have a custom_components directory (folder) there, you need to create it.
-3. In the custom_components directory (folder) create a new folder called arrisdcx960.
-4. Download all the files from the custom_components/arrisdcx960/ directory (folder) in this repository.
+3. In the custom_components directory (folder) create a new folder called lghorizon.
+4. Download all the files from the custom_components/lghorizon/ directory (folder) in this repository.
 5. Place the files you downloaded in the new directory (folder) you created.
 6. Restart Home Assistant
-7. Configure the integration using the HA integration page, Search for ArrisDCX960.
+7. Configure the integration using the HA integration page, Search for LG Horizon.
 
 ## Configuration (Example!)
 
