@@ -2,6 +2,7 @@
 
 ### DISCLAIMER:
 
+- Remove Arris DCX960 first!
 - It's not in HACS yet, So manual installation required. (it's just download and copy paste)
 - It only supports Ziggo until I figured out the other login sequences for Telenet, Magenta, UPC, Virgin
 - It doesn't support services yet
