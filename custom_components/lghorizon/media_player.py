@@ -11,11 +11,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
 from .const import (
     API,
-    RECORD,
-    REWIND,
-    FAST_FORWARD,
-    REMOTE_KEY_PRESS,
-    CONF_REMOTE_KEY,
     DOMAIN,
 )
 from homeassistant.components.media_player.const import (
@@ -32,8 +27,6 @@ from homeassistant.components.media_player.const import (
     SUPPORT_TURN_ON,
     SUPPORT_PLAY_MEDIA,
     SUPPORT_BROWSE_MEDIA,
-    MEDIA_CLASS_DIRECTORY,
-    MEDIA_CLASS_EPISODE,
 )
 
 from homeassistant.const import (
@@ -48,8 +41,6 @@ from lghorizon import (
     ONLINE_RUNNING,
     ONLINE_STANDBY,
     LGHorizonApi,
-    # ArrisDCX960RecordingShow,
-    # ArrisDCX960RecordingSingle,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,65 +55,6 @@ async def async_setup_entry(
     for box in api.settop_boxes.values():
         players.append(LGHorizonMediaPlayer(box, api))
     async_add_entities(players, True)
-
-    #SCHEMA = cv.make_entity_service_schema({})
-
-    # def service_handle_custom(call):
-    #     """Handle the custom services."""
-    #     entity_ids = call.data.get("entity_id")
-    #     entity_id = entity_ids[0]
-    #     _LOGGER.debug("Custom Service for " + entity_id + " - " + call.service)
-
-    #     for player in players:
-    #         if player.entity_id == entity_id:
-    #             if call.service == RECORD:
-    #                 player.api.settop_boxes[player.box_id].record()
-    #             elif call.service == REWIND:
-    #                 player.api.settop_boxes[player.box_id].rewind()
-    #             elif call.service == FAST_FORWARD:
-    #                 player.api.settop_boxes[player.box_id].fastforward()
-
-    # hass.services.async_register(
-    #     DOMAIN,
-    #     RECORD,
-    #     service_handle_custom,
-    #     schema=SCHEMA,
-    # )
-    # hass.services.async_register(
-    #     DOMAIN,
-    #     REWIND,
-    #     service_handle_custom,
-    #     schema=SCHEMA,
-    # )
-    # hass.services.async_register(
-    #     DOMAIN,
-    #     FAST_FORWARD,
-    #     service_handle_custom,
-    #     schema=SCHEMA,
-    # )
-
-    # key_schema = cv.make_entity_service_schema(
-    #     {vol.Required(CONF_REMOTE_KEY): cv.string}
-    # )
-
-    # def service_handle_press_remote_key(service_call):
-    #     """Handle button press service"""
-    #     entity_ids = service_call.data.get("entity_id")
-    #     entity_id = entity_ids[0]
-    #     remote_key = service_call.data[CONF_REMOTE_KEY]
-    #     for player in players:
-    #         if player.entity_id == entity_id:
-    #             player.api.settop_boxes[player.unique_id]._send_key_to_box(
-    #                 f"{remote_key}"
-    #             )
-
-    # hass.services.async_register(
-    #     DOMAIN,
-    #     REMOTE_KEY_PRESS,
-    #     service_handle_press_remote_key,
-    #     schema=key_schema,
-    # )
-
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
     """The home assistant media player."""
@@ -334,108 +266,3 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def should_poll(self):
         return True
-
-        # async def async_browse_media(self, media_content_type=None, media_content_id=None):
-        #     if media_content_type in [None, "main"]:
-        #         self._recordings = await self.hass.async_add_executor_job(
-        #             self.api.get_recordings
-        #         )
-
-        #         main = BrowseMedia(
-        #             title="Recordings",
-        #             media_class=MEDIA_CLASS_DIRECTORY,
-        #             media_content_type="main",
-        #             media_content_id="main",
-        #             can_play=False,
-        #             can_expand=True,
-        #             children=[],
-        #             children_media_class=MEDIA_CLASS_DIRECTORY,
-        #         )
-        #         singleRecordingsCount = 0
-        #         for recording in self._recordings:
-        #             if recording["type"] == "show":
-        #                 show = self._build_show_item(recording["show"])
-        #                 main.children.append(show)
-        #             elif recording["type"] == "recording":
-        #                 singleRecordingsCount += 1
-        #             else:
-        #                 _LOGGER.error("Unknown recording type")
-
-        #         if singleRecordingsCount > 0:
-        #             singlecontainer = BrowseMedia(
-        #                 title="Losse opnames",
-        #                 media_class=MEDIA_CLASS_DIRECTORY,
-        #                 media_content_type="singles",
-        #                 media_content_id="singles",
-        #                 can_play=False,
-        #                 can_expand=True,
-        #                 children_media_class=MEDIA_CLASS_EPISODE,
-        #             )
-        #             main.children.append(singlecontainer)
-        #         return main
-        #     elif media_content_type == "show":
-        #         show_collection = await self._build_show_collection(media_content_id)
-        #         return show_collection
-        #     elif media_content_type == "singles":
-        #         single_collection = self._build_singles_collection()
-        #         return single_collection
-        #     else:
-        #         return None
-
-        # def _build_singles_collection(self):
-        #     """Create response payload to describe contents of a specific library.Used by async_browse_media."""
-        #     singles = BrowseMedia(
-        #         title="Losse opnames",
-        #         media_class=MEDIA_CLASS_DIRECTORY,
-        #         media_content_type="singles",
-        #         media_content_id="singles",
-        #         can_play=False,
-        #         can_expand=True,
-        #         children_media_class=MEDIA_CLASS_EPISODE,
-        #         children=[],
-        #     )
-        #     for recording in self._recordings:
-        #         if recording["type"] != "recording":
-        #             continue
-        #         singles.children.append(self._build_episode_item(recording["recording"]))
-        #     return singles
-
-        # async def _build_show_collection(self, media_content_id):
-        #     """Create response payload to describe contents of a specific library.Used by async_browse_media."""
-        #     payload = await self.hass.async_add_executor_job(
-        #         self.api.get_show_recording, media_content_id
-        #     )
-        #     recorded_show = payload["show"]
-        #     show = self._build_show_item(recorded_show)
-        #     for child in recorded_show.children:
-        #         show.children.append(self._build_episode_item(child["recording"]))
-        #     return show
-
-        # def _build_show_item(self, recorded_show: ArrisDCX960RecordingShow):
-        #     """Create response payload to describe contents of a specific library.Used by async_browse_media."""
-        #     return BrowseMedia(
-        #         title=recorded_show.title,
-        #         media_class=MEDIA_CLASS_DIRECTORY,
-        #         media_content_type="show",
-        #         media_content_id=recorded_show.media_group_id,
-        #         can_play=False,
-        #         can_expand=True,
-        #         thumbnail=recorded_show.image,
-        #         children=[],
-        #         children_media_class=MEDIA_CLASS_EPISODE,
-        #     )
-
-        # def _build_episode_item(self, recording: ArrisDCX960RecordingSingle):
-        # """Create response payload to describe contents of a specific library.Used by async_browse_media."""
-        # title = recording.title
-        # if recording.season and recording.episode:
-        #     title = f"S{recording.season:02}E{recording.episode:02} - {title}"
-        # return BrowseMedia(
-        #     title=title,
-        #     media_class=MEDIA_CLASS_EPISODE,
-        #     media_content_type="recording_episode",
-        #     media_content_id=recording.recording_id,
-        #     can_play=True,
-        #     can_expand=False,
-        #     thumbnail=recording.image,
-        # )
