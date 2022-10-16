@@ -10,7 +10,6 @@ import logging
 from .const import (
     DOMAIN,
     CONF_COUNTRY_CODE,
-    CONF_OMIT_CHANNEL_QUALITY,
     API,
     COUNTRY_CODES,
 )
@@ -27,7 +26,6 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Optional(CONF_COUNTRY_CODE, default="nl"): cv.string,
-                vol.Optional(CONF_OMIT_CHANNEL_QUALITY, default=False): cv.boolean,
             }
         )
     },
@@ -46,7 +44,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         API: api,
-        CONF_OMIT_CHANNEL_QUALITY: entry.data[CONF_OMIT_CHANNEL_QUALITY],
         CONF_USERNAME: entry.data[CONF_USERNAME],
     }
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)

@@ -153,9 +153,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "model": "DCX960",
         }
 
-    def __init__(
-        self, box: LGHorizonBox, api: LGHorizonApi
-    ):
+    def __init__(self, box: LGHorizonBox, api: LGHorizonApi):
         """Init the media player."""
         self._box = box
         self.api = api
@@ -166,7 +164,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     def _create_channel_map(self):
         self._channels = {}
         for channel in self.api._channels.values():
-                self._channels[channel.title] = channel.title
+            self._channels[channel.title] = channel.title
 
     def _strip_quality(self, text: str):
         """Strip quality from text."""
