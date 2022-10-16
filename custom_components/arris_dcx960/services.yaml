@@ -1,0 +1,30 @@
+record:
+  description: Start recording.
+  fields:
+    entity_id:
+      description: Name(s) of entities that need to be controlled.
+      example: "media_player.ziggobox"
+
+rewind:
+  description: Rewind playing media.
+  fields:
+    entity_id:
+      description: Name(s) of entities that need to be controlled.
+      example: "media_player.ziggobox"
+
+fast_forward:
+  description: Fast forward playing media.
+  fields:
+    entity_id:
+      description: Name(s) of entities that need to be controlled.
+      example: "media_player.ziggobox"
+
+remote_key_press:
+  description: Emulate remote control key press.
+  fields:
+    entity_id:
+      description: Name(s) of entities that need to be controlled.
+      example: "media_player.ziggobox"
+    remote_key:
+      description: Key of remote control to Emulate
+      example: Escape

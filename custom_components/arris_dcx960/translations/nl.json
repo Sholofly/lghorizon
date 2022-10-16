@@ -1,0 +1,23 @@
+{
+  "title": "Arris DCX960",
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "country_code": "Provider",
+          "omit_channel_quality": "Strip HD van kanaalnamen"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan niet verbinden",
+      "invalid_auth": "Ongeldige logingegevens",
+      "unknown": "Onbekende fout"
+    },
+    "abort": {
+      "already_configured": "Dit account is reeds toegevoegd."
+    }
+  }
+}

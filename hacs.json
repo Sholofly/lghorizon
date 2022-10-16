@@ -1,0 +1,6 @@
+{
+    "name": "Arris DCX960 (Ziggo, Telenet, Magenta, UPC, Virgin)",
+    "country": ["NL", "BE", "CH", "GB", "AT"],
+    "render_readme": true,
+    "homeassistant": "2021.5.0"
+}
