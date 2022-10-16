@@ -65,7 +65,7 @@ async def async_setup_entry(
         players.append(LGHorizonMediaPlayer(box, api))
     async_add_entities(players, True)
 
-    SCHEMA = cv.make_entity_service_schema({})
+    #SCHEMA = cv.make_entity_service_schema({})
 
     # def service_handle_custom(call):
     #     """Handle the custom services."""
