@@ -60,7 +60,7 @@ Next countries do have the same familiar web interface but aren't supported due 
 1. In HA Click on settings
 2. Click on Integrations
 3. Click on button 'Add integration'
-4. Search for 'Arris DCX960' and click
+4. Search for 'LG Horizon' and click
 
 ### Parameters
 
@@ -71,7 +71,7 @@ Next countries do have the same familiar web interface but aren't supported due 
 | Provider  | yes (default 'Ziggo')| Your Provider |
 
 
-## Service to change channel
+<!-- ## Service to change channel
 
 ```yaml
 service: media_player.play_media
@@ -113,7 +113,7 @@ service_data:
   entity_id: media_player.ziggo_beneden
   remote_key: 'MediaTopMenu'
 ```
-![Key commands](images/remote.png)
+![Key commands](images/remote.png) -->
 
 ## Disclaimer
 
