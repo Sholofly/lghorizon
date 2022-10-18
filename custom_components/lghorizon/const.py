@@ -15,9 +15,9 @@ COUNTRY_CODES = {
     # "Telenet (BE)": "be-nl",
     # "Telenet (BE, PREPROD)": "be-nl-preprod",
     # "Telenet (FR)": "be-fr",
-    # "Magenta": "at",
-    # "UPC Switzerland": "ch",
+    "Magenta": "at",
+    "UPC Switzerland": "ch",
     # "Virgin Media (GB)": "gb",
     # "Virgin Media (GB, PREPROD)": "gb-preprod",
-    # "Virgin Media (IE)": "ie",
+    "Virgin Media (IE)": "ie",
 }
