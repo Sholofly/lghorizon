@@ -7,9 +7,9 @@
     "@Sholofly"
   ],
   "iot_class": "cloud_push",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "config_flow": true,
   "requirements": [
-    "lghorizon==0.3.0"
+    "lghorizon==0.4.2"
   ]
 }
