@@ -56,6 +56,7 @@ async def async_setup_entry(
         players.append(LGHorizonMediaPlayer(box, api))
     async_add_entities(players, True)
 
+
 class LGHorizonMediaPlayer(MediaPlayerEntity):
     """The home assistant media player."""
 
@@ -149,7 +150,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 | SUPPORT_TURN_OFF
                 | SUPPORT_SELECT_SOURCE
                 | SUPPORT_PLAY_MEDIA
-                | SUPPORT_BROWSE_MEDIA
+                # | SUPPORT_BROWSE_MEDIA
             )
         return (
             SUPPORT_PLAY
@@ -161,7 +162,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             | SUPPORT_NEXT_TRACK
             | SUPPORT_PREVIOUS_TRACK
             | SUPPORT_PLAY_MEDIA
-            | SUPPORT_BROWSE_MEDIA
+            # | SUPPORT_BROWSE_MEDIA
         )
 
     @property
