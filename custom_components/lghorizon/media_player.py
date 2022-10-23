@@ -81,8 +81,8 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 (DOMAIN, self._box.deviceId)
             },
             "name": self._box.deviceFriendlyName,
-            "manufacturer": "Arris",
-            "model": "DCX960",
+            "manufacturer": self._box.manufacturer or "unknown",
+            "model": self._box.model or "unknown",
         }
 
     def __init__(self, box: LGHorizonBox, api: LGHorizonApi):
