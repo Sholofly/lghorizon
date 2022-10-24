@@ -3,8 +3,8 @@
 ### DISCLAIMER:
 
 - Remove Arris DCX960 first!
-- It's not in HACS yet, So manual installation required. (it's just download and copy paste)
-- It only supports Ziggo, Magenta, UPC, Virgin (IE) until I figured out the login sequences for Telenet and Virgin media (GB)
+- Add this repository to your custom repositories in HACS
+- It only supports Ziggo, Magenta, UPC, Virgin (IE) and Telenet (BE)
 - It doesn't support services yet
 - It doesn't support recordings yet
 - Submit feature requests and errors here: https://github.com/Sholofly/lghorizon/
@@ -24,9 +24,9 @@ A media player component for Home Assistant that creates a media player and a se
 | Country | Provider | Box name | Confirmed working
 | --- | ----------- | --- | -----------|
 | Netherlands | Ziggo | [Mediabox Next](https://www.ziggo.nl/televisie/mediaboxen/mediabox-next#ziggo-tv) | yes
-| Austria | Magenta | [Entertain box 4K](https://www.magenta.at/entertain-box) | no (testers wanted!) 
-| Switzerland | UPC Switzerland | [UPC TV Box](https://www.upc.ch/en/television/learn-about-tv/tv/) | no (testers wanted!) 
-| Ireland | Virgin Media | [360 box](https://www.virginmedia.ie/virgintv360support/) | no (testers wanted!) 
+| Austria | Magenta | [Entertain box 4K](https://www.magenta.at/entertain-box) | no (testers wanted!)
+| Switzerland | UPC Switzerland | [UPC TV Box](https://www.upc.ch/en/television/learn-about-tv/tv/) | no (testers wanted!)
+| Ireland | Virgin Media | [360 box](https://www.virginmedia.ie/virgintv360support/) | no (testers wanted!)
 <!--| Belgium | Telenet | [Telenet TV-Box](https://www2.telenet.be/nl/klantenservice/ontdek-de-telenet-tv-box/) | yes
 | Great Britain | Virgin Media | [Virgin TV 360](https://www.virginmedia.com/shop/tv/virgin-tv-360) | yes-->
 ## Prerequisites
@@ -73,7 +73,7 @@ service: media_player.play_media
 service_data:
   entity_id: media_player.ziggo_beneden
   media_content_id: 401 # Any channel number, 'Netflix' or 'Videoland'
-  media_content_type: channel # 'channel' when media_content_id is channelnumber, 'app' when media_content_id is 'Netflix' or 'Videoland' 
+  media_content_type: channel # 'channel' when media_content_id is channelnumber, 'app' when media_content_id is 'Netflix' or 'Videoland'
 ```
 
 ## Custom services
@@ -86,7 +86,7 @@ service_data:
   entity_id: media_player.ziggo_beneden
 ```
 
-This service can be called to rewind or fast-forward. 
+This service can be called to rewind or fast-forward.
 Note that this command can be called multiple times to speed up.
 To stop this action, you can call the standard media_player.play service on the same entity.
 
