@@ -331,7 +331,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 if type(episode_data) is LGHorizonRecordingEpisode:
                     episode_recording: LGHorizonRecordingEpisode = episode_data
                     episode_media = BrowseMedia(
-                        title=f"S{episode_recording.seasonNumber:02} E{episode_recording.episodeNumber:02}: {episode_recording.showTitle} - {episode_recording.episode_title}",
+                        title=f"S{episode_recording.seasonNumber:02} E{episode_recording.episodeNumber:02}: {episode_recording.showTitle} - {episode_recording.episodeTitle}",
                         media_class=MEDIA_CLASS_EPISODE,
                         media_content_type=MEDIA_TYPE_EPISODE,
                         media_content_id=episode_recording.episodeId,
