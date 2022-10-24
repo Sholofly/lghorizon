@@ -17,6 +17,7 @@ from homeassistant.components.media_player.const import (
     MEDIA_TYPE_APP,
     MEDIA_TYPE_EPISODE,
     MEDIA_TYPE_CHANNEL,
+    MEDIA_TYPE_TVSHOW,
     SUPPORT_NEXT_TRACK,
     SUPPORT_PAUSE,
     SUPPORT_PLAY,
@@ -27,6 +28,9 @@ from homeassistant.components.media_player.const import (
     SUPPORT_TURN_ON,
     SUPPORT_PLAY_MEDIA,
     SUPPORT_BROWSE_MEDIA,
+    MEDIA_CLASS_DIRECTORY,
+    MEDIA_CLASS_TV_SHOW,
+    MEDIA_CLASS_EPISODE
 )
 
 from homeassistant.const import (
@@ -41,6 +45,11 @@ from lghorizon import (
     ONLINE_RUNNING,
     ONLINE_STANDBY,
     LGHorizonApi,
+    LGHorizonRecordingShow,
+    LGHorizonRecordingSingle,
+    LGHorizonRecordingListSeasonShow,
+    LGHorizonRecordingEpisode
+    
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -150,7 +159,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 | SUPPORT_TURN_OFF
                 | SUPPORT_SELECT_SOURCE
                 | SUPPORT_PLAY_MEDIA
-                # | SUPPORT_BROWSE_MEDIA
+                | SUPPORT_BROWSE_MEDIA
             )
         return (
             SUPPORT_PLAY
@@ -162,7 +171,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             | SUPPORT_NEXT_TRACK
             | SUPPORT_PREVIOUS_TRACK
             | SUPPORT_PLAY_MEDIA
-            # | SUPPORT_BROWSE_MEDIA
+            | SUPPORT_BROWSE_MEDIA
         )
 
     @property
@@ -233,8 +242,8 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
     async def async_play_media(self, media_type, media_id, **kwargs):
         """Support changing a channel."""
-        if media_type == "recording_episode":
-            # self._box.play_recording(self.box_id, media_id)
+        if media_type == MEDIA_TYPE_EPISODE:
+            self._box.play_recording(media_id)
             pass
         elif media_type == MEDIA_TYPE_APP:
             self.api.select_source(media_id, self._box.deviceId)
@@ -267,3 +276,93 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def should_poll(self):
         return True
+
+    async def async_browse_media(self, media_content_type=None, media_content_id=None):
+        _LOGGER.debug(f"{media_content_type} - {media_content_id}")
+        if media_content_type in [None, "main"]:
+            main = BrowseMedia(
+                title="Opnames",
+                media_class=MEDIA_CLASS_DIRECTORY,
+                media_content_type="main",
+                media_content_id="main",
+                can_play=False,
+                can_expand=True,
+                children=[],
+                children_media_class=MEDIA_CLASS_DIRECTORY,
+            )
+            recordings = await self.hass.async_add_executor_job(
+                self.api.get_recordings
+            )
+            for recording in recordings:
+                if type(recording) is LGHorizonRecordingListSeasonShow:
+                    show: LGHorizonRecordingListSeasonShow = recording
+                    show_media =  BrowseMedia(
+                        title=show.title,
+                        media_class=MEDIA_CLASS_TV_SHOW,
+                        media_content_type=MEDIA_TYPE_TVSHOW,
+                        media_content_id=show.showId,
+                        can_play=False,
+                        can_expand=True,
+                        thumbnail=show.image,
+                        children=[],
+                        children_media_class=MEDIA_CLASS_DIRECTORY,
+                    )
+                    main.children.append(show_media)
+                if type(recording) is LGHorizonRecordingSingle:
+                    single: LGHorizonRecordingSingle = recording
+                    single_media = BrowseMedia(
+                        title=single.title,
+                        media_class=MEDIA_CLASS_EPISODE,
+                        media_content_type=MEDIA_TYPE_EPISODE,
+                        media_content_id=single.id,
+                        can_play=True,
+                        can_expand=False,
+                        thumbnail=single.image
+                    )
+                    main.children.append(single_media)
+            return main
+        elif media_content_type == MEDIA_TYPE_TVSHOW:
+            episodes_data = await self.hass.async_add_executor_job(
+                self.api.get_recording_show, media_content_id
+            )
+            children = []
+            
+            for episode_data in episodes_data:
+                if type(episode_data) is LGHorizonRecordingEpisode:
+                    episode_recording: LGHorizonRecordingEpisode = episode_data
+                    episode_media = BrowseMedia(
+                        title=f"S{episode_recording.seasonNumber:02} E{episode_recording.episodeNumber:02}: {episode_recording.showTitle} - {episode_recording.episode_title}",
+                        media_class=MEDIA_CLASS_EPISODE,
+                        media_content_type=MEDIA_TYPE_EPISODE,
+                        media_content_id=episode_recording.episodeId,
+                        can_play=True,
+                        can_expand=False,
+                        thumbnail=episode_recording.image
+                    )
+                    children.append(episode_media)
+                elif type(episode_data) is LGHorizonRecordingShow:
+                    show_recording: LGHorizonRecordingShow = episode_data
+                    show_media = BrowseMedia(
+                        title=f"S{show_recording.seasonNumber:02} E{show_recording.episodeNumber:02}: {show_recording.showTitle}",
+                        media_class=MEDIA_CLASS_EPISODE,
+                        media_content_type=MEDIA_TYPE_EPISODE,
+                        media_content_id=show_recording.episodeId,
+                        can_play=True,
+                        can_expand=False,
+                        thumbnail=show_recording.image
+                    )
+                    children.append(show_media)
+            show_container = BrowseMedia(
+                title=episodes_data[0].showTitle,
+                media_class=MEDIA_CLASS_DIRECTORY,
+                media_content_type=MEDIA_TYPE_TVSHOW,
+                media_content_id=MEDIA_TYPE_TVSHOW,
+                can_play=False,
+                can_expand=False,
+                children=children,
+                children_media_class=MEDIA_CLASS_EPISODE,
+                thumbnail=episodes_data[0].image
+            )
+            return show_container
+        return None
+                    
