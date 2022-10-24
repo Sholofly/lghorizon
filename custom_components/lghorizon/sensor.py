@@ -8,6 +8,8 @@ from .const import (
     API,
     DOMAIN,
 )
+from datetime import timedelta
+SCAN_INTERVAL = timedelta(hours=1)
 
 
 from lghorizon import LGHorizonApi
