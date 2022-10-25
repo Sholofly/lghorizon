@@ -3,7 +3,10 @@ import logging
 import random
 import voluptuous as vol
 import time
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import (
+    config_validation as cv,
+    entity_platform
+)
 
 from homeassistant.components.media_player import MediaPlayerEntity, BrowseMedia
 from homeassistant.config_entries import ConfigEntry
@@ -12,6 +15,11 @@ from homeassistant.helpers.typing import HomeAssistantType
 from .const import (
     API,
     DOMAIN,
+    RECORD,
+    REWIND,
+    FAST_FORWARD,
+    CONF_REMOTE_KEY,
+    REMOTE_KEY_PRESS
 )
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_APP,
@@ -28,6 +36,7 @@ from homeassistant.components.media_player.const import (
     SUPPORT_TURN_ON,
     SUPPORT_PLAY_MEDIA,
     SUPPORT_BROWSE_MEDIA,
+    SUPPORT_SEEK,
     MEDIA_CLASS_DIRECTORY,
     MEDIA_CLASS_TV_SHOW,
     MEDIA_CLASS_EPISODE
@@ -65,6 +74,44 @@ async def async_setup_entry(
         players.append(LGHorizonMediaPlayer(box, api))
     async_add_entities(players, True)
 
+    platform = entity_platform.async_get_current_platform()
+    default_service_schema = cv.make_entity_service_schema({})
+    async def handle_default_services(entity, call):
+        _LOGGER.debug(f"Service {call.service} was called for box {entity.unique_id}")
+        if call.service == REWIND:
+            api.settop_boxes[entity.unique_id].rewind()
+        elif call.service == FAST_FORWARD:
+            api.settop_boxes[entity.unique_id].fast_forward()
+        elif call.service == RECORD:
+            api.settop_boxes[entity.unique_id].record()
+        elif call.service == REMOTE_KEY_PRESS:
+            key = call.data[CONF_REMOTE_KEY]
+            api.settop_boxes[entity.unique_id].send_key_to_box(key)
+
+    platform.async_register_entity_service(
+        RECORD,
+        default_service_schema,
+        handle_default_services,
+    )
+    platform.async_register_entity_service(
+        REWIND,
+        default_service_schema,
+        handle_default_services,
+    )
+    platform.async_register_entity_service(
+        FAST_FORWARD,
+        default_service_schema,
+        handle_default_services,
+    )
+    key_schema = cv.make_entity_service_schema(
+        {vol.Required(CONF_REMOTE_KEY): cv.string}
+    )
+    platform.async_register_entity_service(
+        REMOTE_KEY_PRESS,
+        key_schema,
+        handle_default_services,
+    )
+  
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
     """The home assistant media player."""
@@ -154,6 +201,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 | SUPPORT_SELECT_SOURCE
                 | SUPPORT_PLAY_MEDIA
                 | SUPPORT_BROWSE_MEDIA
+                | SUPPORT_SEEK
             )
         return (
             SUPPORT_PLAY
@@ -166,6 +214,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             | SUPPORT_PREVIOUS_TRACK
             | SUPPORT_PLAY_MEDIA
             | SUPPORT_BROWSE_MEDIA
+            | SUPPORT_SEEK
         )
 
     @property

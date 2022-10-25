@@ -1,0 +1,34 @@
+record:
+  name: Record
+  description: Start recording.
+  fields:
+    entity_id:
+      description: "Id of your media box."
+      example: "media_player.tv_box_livingroom"
+
+rewind:
+  name: Rewind
+  description: Rewind playing media.
+  fields:
+    entity_id:
+      description: "Id of your media box."
+      example: "media_player.tv_box_livingroom"
+
+fast_forward:
+  name: Fast forward
+  description: Fast forward playing media.
+  fields:
+    entity_id:
+      description: "Id of your media box."
+      example: "media_player.tv_box_livingroom"
+
+remote_key_press:
+  name: Send key
+  description: Send a remote control key press.
+  fields:
+    entity_id:
+      description: "Id of your media box."
+      example: "media_player.tv_box_livingroom"
+    remote_key:
+      description: "Key to send"
+      example: TV
