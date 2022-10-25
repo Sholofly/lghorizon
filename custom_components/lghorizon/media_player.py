@@ -108,12 +108,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         for channel in self.api._channels.values():
             self._channels[channel.title] = channel.title
 
-    def _strip_quality(self, text: str):
-        """Strip quality from text."""
-        if text is None:
-            return text
-        return text.replace(" HD", "")
-
     async def async_added_to_hass(self):
         """Use lifecycle hooks."""
 
@@ -330,24 +324,32 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             for episode_data in episodes_data:
                 if type(episode_data) is LGHorizonRecordingEpisode:
                     episode_recording: LGHorizonRecordingEpisode = episode_data
+                    planned: bool = episode_recording.recordingState == 'planned'
+                    title=f"S{episode_recording.seasonNumber:02} E{episode_recording.episodeNumber:02}: {episode_recording.showTitle} - {episode_recording.episodeTitle}"
+                    if planned:
+                        title += " (planned)"
                     episode_media = BrowseMedia(
-                        title=f"S{episode_recording.seasonNumber:02} E{episode_recording.episodeNumber:02}: {episode_recording.showTitle} - {episode_recording.episodeTitle}",
+                        title=title,
                         media_class=MEDIA_CLASS_EPISODE,
                         media_content_type=MEDIA_TYPE_EPISODE,
                         media_content_id=episode_recording.episodeId,
-                        can_play=True,
+                        can_play= not planned,
                         can_expand=False,
                         thumbnail=episode_recording.image
                     )
                     children.append(episode_media)
                 elif type(episode_data) is LGHorizonRecordingShow:
                     show_recording: LGHorizonRecordingShow = episode_data
+                    planned: bool = show_recording.recordingState == 'planned'
+                    title = f"S{show_recording.seasonNumber:02} E{show_recording.episodeNumber:02}: {show_recording.showTitle}"
+                    if planned:
+                        title += " (planned)"
                     show_media = BrowseMedia(
-                        title=f"S{show_recording.seasonNumber:02} E{show_recording.episodeNumber:02}: {show_recording.showTitle}",
+                        title=title,
                         media_class=MEDIA_CLASS_EPISODE,
                         media_content_type=MEDIA_TYPE_EPISODE,
                         media_content_id=show_recording.episodeId,
-                        can_play=True,
+                        can_play=not planned,
                         can_expand=False,
                         thumbnail=show_recording.image
                     )
