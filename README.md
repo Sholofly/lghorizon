@@ -33,12 +33,12 @@ A media player component for Home Assistant that creates a media player and a se
 
 - The energy mode needs to be set to high, otherwise you are not able to switch the device on in the media player.
 
-<!-- ## HACS Installation
+## HACS Installation
 
 1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites)
 2. In the integrations tab, search for LG Horizon.
 3. Install the Integration.
-4. Configure the integration using the HA integration page, Search for LG Horizon. -->
+4. Configure the integration using the HA integration page, Search for LG Horizon.
 
 ## Manual installation
 
@@ -66,10 +66,10 @@ A media player component for Home Assistant that creates a media player and a se
 | Provider  | yes (default 'Ziggo')| Your Provider |
 
 
-<!-- ## Service to change channel
+## Service to change channel
 
 ```yaml
-service: media_player.play_media
+service: lghorizon.play_media
 service_data:
   entity_id: media_player.ziggo_beneden
   media_content_id: 401 # Any channel number, 'Netflix' or 'Videoland'
@@ -81,7 +81,7 @@ service_data:
 This service can be called to start a recording. Note that this shows a pop-up on screen and confirmation is required.
 
 ```yaml
-service: arris_dcx960.record
+service: lghorizon.record
 service_data:
   entity_id: media_player.ziggo_beneden
 ```
@@ -91,11 +91,11 @@ Note that this command can be called multiple times to speed up.
 To stop this action, you can call the standard media_player.play service on the same entity.
 
 ```yaml
-service: arris_dcx960.rewind
+service: lghorizon.rewind
 service_data:
   entity_id: media_player.ziggo_beneden
 
-service: arris_dcx960.fast_forward
+service: lghorizon.fast_forward
 service_data:
   entity_id: media_player.ziggo_beneden
 ```
@@ -103,12 +103,12 @@ service_data:
 This service can be called to emulate a key press on the remote control.
 
 ```yaml
-service: arris_dcx960.remote_key_press
+service: lghorizon.remote_key_press
 service_data:
   entity_id: media_player.ziggo_beneden
   remote_key: 'MediaTopMenu'
 ```
-![Key commands](images/remote.png) -->
+![Key commands](images/remote.png)
 
 ## Disclaimer
 
@@ -124,3 +124,4 @@ This component is not provided, supported or maintained by any of the companies 
 - Testing by:
   - Craig McGowan (GB)
   - Jarne Roussard (BE)
+  - Sammy Verdonck (BE)
