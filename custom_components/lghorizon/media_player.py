@@ -185,16 +185,16 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def media_image_url(self):
         """Return the media image URL."""
-        if self._box.playing_info.image is not None:
-            image_url = self._box.playing_info.image
-            if self._box.playing_info.source_type == "linear":
-                join_param = "?"
-                if join_param in self._box.playing_info.image:
-                    join_param = "&"
-                image_url = f"{image_url}{join_param}{str(random.randrange(1000000))}"
-            return image_url
-        return None
+        image_url = self._box.playing_info.image
+        if image_url is None:
+            return None
 
+        if self._box.playing_info.source_type == "linear":
+            join_param = "?"
+            if join_param in self._box.playing_info.image:
+                join_param = "&"
+            image_url = f"{image_url}{join_param}{str(random.randrange(1000000))}"
+        return image_url
     @property
     def media_title(self):
         """Return the media title."""
