@@ -201,7 +201,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 | SUPPORT_SELECT_SOURCE
                 | SUPPORT_PLAY_MEDIA
                 | SUPPORT_BROWSE_MEDIA
-                | SUPPORT_SEEK
+                # | SUPPORT_SEEK
             )
         return (
             SUPPORT_PLAY
@@ -214,7 +214,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             | SUPPORT_PREVIOUS_TRACK
             | SUPPORT_PLAY_MEDIA
             | SUPPORT_BROWSE_MEDIA
-            | SUPPORT_SEEK
+            # | SUPPORT_SEEK
         )
 
     @property
