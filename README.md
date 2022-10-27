@@ -1,34 +1,34 @@
-# WARNING: This component replaces the Arris DCX960 component and is in Alpha status
-
-### DISCLAIMER:
-
-- Remove Arris DCX960 first!
-- Add this repository to your custom repositories in HACS
-- It only supports Ziggo, Magenta, UPC, Virgin (IE) and Telenet (BE)
-- It doesn't support services yet
-- It doesn't support recordings yet
-- Submit feature requests and errors here: https://github.com/Sholofly/lghorizon/
 
 <!-- # LG Horizon Settop boxes (Ziggo, Telenet, Magenta, UPC, Virgin) -->
-# LG Horizon Settop boxes (Ziggo)
+# LG Horizon Settop boxes for Ziggo(NL), Magenta(AT), UPC(CH), Virgin(IE), Telenet(BE)
+
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 <br><a href="https://www.buymeacoffee.com/sholofly" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-black.png" width="150px" height="35px" alt="Buy Me A Coffee" style="height: 35px !important;width: 150px !important;" ></a>
 
+## WARNING: This component replaces the Arris DCX960 component and is in beta status
+
+
 ## Description
 
-A media player component for Home Assistant that creates a media player and a sensor for each LG Horizon Settopbox in your account.
+A media player component for Home Assistant that controls each LG Horizon Settopbox in your account. After configuration you should see:
+- one media player entity for each physical device in your account.
+- one sensor entity with the used recording capacity
 
-## Supported Countries and providers
+### Features only available in latest Beta version:
+
+- Media browser enabled for recordings
+- Extended logging
+## Supported countries and providers
 
 | Country | Provider | Box name | Confirmed working
 | --- | ----------- | --- | -----------|
-| Netherlands | Ziggo | [Mediabox Next](https://www.ziggo.nl/televisie/mediaboxen/mediabox-next#ziggo-tv) | yes
-| Austria | Magenta | [Entertain box 4K](https://www.magenta.at/entertain-box) | no (testers wanted!)
-| Switzerland | UPC Switzerland | [UPC TV Box](https://www.upc.ch/en/television/learn-about-tv/tv/) | no (testers wanted!)
+| Netherlands | Ziggo | [Mediabox Next](https://www.ziggo.nl/televisie/mediaboxen/mediabox-next#ziggo-tv), [Mediabox Next mini](https://www.ziggo.nl/televisie/mediaboxen/next-mini) | yes
+| Austria | Magenta | [Entertain box 4K](https://www.magenta.at/entertain-box) | yes
+| Switzerland | UPC Switzerland | [UPC TV Box](https://www.upc.ch/en/television/learn-about-tv/tv/) | yes
 | Ireland | Virgin Media | [360 box](https://www.virginmedia.ie/virgintv360support/) | no (testers wanted!)
-<!--| Belgium | Telenet | [Telenet TV-Box](https://www2.telenet.be/nl/klantenservice/ontdek-de-telenet-tv-box/) | yes
-| Great Britain | Virgin Media | [Virgin TV 360](https://www.virginmedia.com/shop/tv/virgin-tv-360) | yes-->
+| Belgium | Telenet | [Telenet TV-Box](https://www2.telenet.be/nl/klantenservice/ontdek-de-telenet-tv-box/) | yes
+<!--| Great Britain | Virgin Media | [Virgin TV 360](https://www.virginmedia.com/shop/tv/virgin-tv-360) | yes-->
 ## Prerequisites
 
 - The energy mode needs to be set to high, otherwise you are not able to switch the device on in the media player.
@@ -36,9 +36,10 @@ A media player component for Home Assistant that creates a media player and a se
 ## HACS Installation
 
 1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites)
-2. In the integrations tab, search for LG Horizon.
-3. Install the Integration.
-4. Configure the integration using the HA integration page, Search for LG Horizon.
+2. (Temporary) Add this repository to custom repository to HACS
+3. In the integrations tab, search for LG Horizon.
+4. Install the Integration. Please consider enabling beta versions to keep track of the latest (experimental) features.
+5. Configure the integration using the HA integration page, Search for LG Horizon.
 
 ## Manual installation
 
