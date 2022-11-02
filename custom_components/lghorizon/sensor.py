@@ -9,8 +9,10 @@ from .const import (
     DOMAIN,
 )
 from datetime import timedelta
-SCAN_INTERVAL = timedelta(hours=1)
+import logging
 
+SCAN_INTERVAL = timedelta(hours=1)
+_LOGGER = logging.getLogger(__name__)
 
 from lghorizon import LGHorizonApi
 
@@ -21,6 +23,11 @@ async def async_setup_entry(
     """Setup platform"""
     sensors = []
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
+    capacity =  await hass.async_add_executor_job(api.get_recording_capacity)
+    if not capacity:
+        _LOGGER.info("No recording capacity available. No sensor added.")
+        return
+ 
     username = hass.data[DOMAIN][entry.entry_id][CONF_USERNAME]
     sensors.append(LGHorizonSensor(hass, username, api))
     async_add_entities(sensors, True)
