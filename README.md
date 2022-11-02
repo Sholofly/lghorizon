@@ -13,10 +13,7 @@
 
 A media player component for Home Assistant that controls each LG Horizon Settopbox in your account. After configuration you should see:
 - one media player entity for each physical device in your account.
-- one sensor entity with the used recording capacity
-
-### Features only available in latest Beta version:
-
+- one sensor entity with the used recording capacity, only if recording is enabled
 - Media browser enabled for recordings
 - Extended logging
 ## Supported countries and providers
