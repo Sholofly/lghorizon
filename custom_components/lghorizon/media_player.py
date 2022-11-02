@@ -289,7 +289,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             self._box.play_recording(media_id)
             pass
         elif media_type == MEDIA_TYPE_APP:
-            self.api.select_source(media_id, self._box.deviceId)
+            self._box.set_channel(media_id)
         elif media_type == MEDIA_TYPE_CHANNEL:
             # media_id should only be a channel number
             try:
@@ -298,11 +298,11 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 _LOGGER.error("Media ID must be positive integer")
                 return
             if self._box.playing_info.source_type == "app":
-                self._box._send_key_to_box("TV")
+                self._box.send_key_to_box("TV")
                 time.sleep(1)
 
             for digit in media_id:
-                self._box._send_key_to_box(f"{digit}")
+                self._box.send_key_to_box(f"{digit}")
         else:
             _LOGGER.error("Unsupported media type")
 
