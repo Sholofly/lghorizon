@@ -33,10 +33,9 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 ## HACS Installation
 
 1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites)
-2. (Temporary) Add this repository to custom repository to HACS
-3. In the integrations tab, search for LG Horizon.
-4. Install the Integration. Please consider enabling beta versions to keep track of the latest (experimental) features.
-5. Configure the integration using the HA integration page, Search for LG Horizon.
+2. In the integrations tab, search for LG Horizon.
+3. Install the Integration. Please consider enabling beta versions to keep track of the latest (experimental) features.
+4. Configure the integration using the HA integration page, Search for LG Horizon.
 
 ## Manual installation
 
