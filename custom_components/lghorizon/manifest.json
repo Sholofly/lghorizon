@@ -10,6 +10,6 @@
   "version": "0.3.3",
   "config_flow": true,
   "requirements": [
-    "lghorizon==0.5.4"
+    "lghorizon>=0.5.4"
   ]
 }
