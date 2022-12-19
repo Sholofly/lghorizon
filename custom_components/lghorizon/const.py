@@ -20,4 +20,5 @@ COUNTRY_CODES = {
     "Virgin Media (GB)": "gb",
     # "Virgin Media (GB, PREPROD)": "gb-preprod",
     "Virgin Media (IE)": "ie",
+    "UPC (PL)": "pl",
 }
