@@ -26,6 +26,7 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 | Ireland | Virgin Media | [360 box](https://www.virginmedia.ie/virgintv360support/) | yes
 | Belgium | Telenet | [Telenet TV-Box](https://www2.telenet.be/nl/klantenservice/ontdek-de-telenet-tv-box/) | yes
 | Great Britain | Virgin Media | [Virgin TV 360](https://www.virginmedia.com/shop/tv/virgin-tv-360) | yes
+| Poland | UPC Poland | [UPC TV Box](https://www.upc.pl/telewizja/poznaj/poznaj-nasza-telewizje/dekoder-4k/) | yes
 ## Prerequisites
 
 - The energy mode needs to be set to high, otherwise you are not able to switch the device on in the media player.
