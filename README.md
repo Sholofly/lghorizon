@@ -1,6 +1,6 @@
 
 <!-- # LG Horizon Settop boxes (Ziggo, Telenet, Magenta, UPC, Virgin) -->
-# LG Horizon Settop boxes for Ziggo(NL), Magenta(AT), UPC(CH), Virgin(GB, IE), Telenet(BE)
+# LG Horizon Settop boxes for Ziggo(NL), Magenta(AT), UPC(CH, PL), Virgin(GB, IE), Telenet(BE)
 
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
