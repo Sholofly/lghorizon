@@ -1,6 +1,6 @@
 
 <!-- # LG Horizon Settop boxes (Ziggo, Telenet, Magenta, UPC, Virgin) -->
-# LG Horizon Settop boxes for Ziggo(NL), Magenta(AT), UPC(CH), Virgin(GB, IE), Telenet(BE)
+# LG Horizon Settop boxes for Ziggo(NL), Magenta(AT), UPC(CH, PL), Virgin(GB, IE), Telenet(BE)
 
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
@@ -116,9 +116,10 @@ This component is not provided, supported or maintained by any of the companies 
 - The excellent start from [IIStevowII](https://github.com/IIStevowII/ziggo-mediabox-next) for a single settopbox inspired me!
 - The nodejs script [NextRemoteJs from basst85](https://github.com/basst85/NextRemoteJs/) used as reference to compare results.
 - The input from [Jochen Siegenthaler](https://github.com/jsiegenthaler/). His [Homebridge](https://github.com/jsiegenthaler/homebridge-eosstb) development helped me forward.
-- Contributions by:
+- Contributions on this project and the lghorizon-api package by:
   - [shortwood](https://github.com/shortwood)
   - [michael-geerts](https://github.com/michael-geerts)
+  - [caraar12345](https://github.com/caraar12345)
 - Testing by:
   - Craig McGowan (GB)
   - Jarne Roussard (BE)
