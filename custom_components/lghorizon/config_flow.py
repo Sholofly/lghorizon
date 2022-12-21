@@ -39,11 +39,14 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     """Validate the user input allows us to connect."""
 
     try:
+        telenet_identifier = None
+        if CONF_IDENTIFIER in data:
+            telenet_identifier = data[CONF_IDENTIFIER]
         api = LGHorizonApi(
             data[CONF_USERNAME],
             data[CONF_PASSWORD],
             COUNTRY_CODES[data[CONF_COUNTRY_CODE]],
-            data[CONF_IDENTIFIER],
+            telenet_identifier,
         )
         await hass.async_add_executor_job(api.connect)
         await hass.async_add_executor_job(api.disconnect)
