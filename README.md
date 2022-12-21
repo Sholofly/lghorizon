@@ -55,6 +55,9 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 3. Click on button 'Add integration'
 4. Search for 'LG Horizon' and click
 
+
+
+
 ### Parameters
 
 | Parameter | Required | Description
@@ -62,6 +65,20 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 | Username | yes | Your provider username |
 | Password | yes | Your provider password |
 | Provider  | yes (default 'Ziggo')| Your Provider |
+| Identifier  | no (only for Telenet)| Your account identifier (see below) |
+
+## Configuration Telenet multiple accounts
+When you can't connect to your Telenet account it's possible that you have multiple accounts and you have to provide your account identifier.
+You can find your identifier by opening your browser in incognito mode and login to your telenet TV environment.
+After entering your credentials an account selection screen will popup:
+![account selection](/images/Telenet%20DTV.png)
+
+- Find the account with the option 'Digital Base Telenet TV2'
+- Right click the radio button before that account and click inspect element
+- In the source code find the value of the box. Usually starts with DTV
+  ![Identifier code](/images/Telenet%20code.png)
+- Use that code in the config of your telenet account in HA
+
 
 
 ## Service to change channel
@@ -124,4 +141,5 @@ This component is not provided, supported or maintained by any of the companies 
   - Craig McGowan (GB)
   - Jarne Roussard (BE)
   - Sammy Verdonck (BE)
+  - Jordy Smolders (BE)
   - [Majkel Łacina (PL)](https://github.com/lacinamichal)
