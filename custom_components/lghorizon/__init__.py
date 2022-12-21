@@ -27,7 +27,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Optional(CONF_COUNTRY_CODE, default="nl"): cv.string,
-                vol.Optional(CONF_IDENTIFIER):cv.string
+                vol.Optional(CONF_IDENTIFIER, default=None):cv.string
             }
         )
     },
@@ -37,11 +37,14 @@ CONFIG_SCHEMA = vol.Schema(
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up lghorizon api from a config entry."""
+    id = None
+    if CONF_IDENTIFIER in entry.data:
+        id = entry.data[CONF_IDENTIFIER]
     api = LGHorizonApi(
         entry.data[CONF_USERNAME],
         entry.data[CONF_PASSWORD],
         COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]],
-        entry.data[CONF_IDENTIFIER]
+        id
     )
     await hass.async_add_executor_job(api.connect)
     hass.data.setdefault(DOMAIN, {})
