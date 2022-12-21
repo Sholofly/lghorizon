@@ -6,7 +6,8 @@
         "data": {
           "username": "Username",
           "password": "Password",
-          "country_code": "Provider"
+          "country_code": "Provider",
+          "identifier": "DTV identifier"
         }
       }
     },

@@ -13,7 +13,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 import homeassistant.helpers.config_validation as cv
 
-from .const import DOMAIN, CONF_COUNTRY_CODE, COUNTRY_CODES
+from .const import DOMAIN, CONF_COUNTRY_CODE, COUNTRY_CODES, CONF_IDENTIFIER
 from lghorizon import (
     LGHorizonApi,
     LGHorizonApiUnauthorizedError,
@@ -28,7 +28,9 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_PASSWORD): cv.string,
         vol.Required(CONF_COUNTRY_CODE, default=list(COUNTRY_CODES.keys())[0]): vol.In(
             list(COUNTRY_CODES.keys())
-        )
+        ),
+        vol.Optional(CONF_IDENTIFIER):cv.string
+        
     }
 )
 
@@ -41,6 +43,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
             data[CONF_USERNAME],
             data[CONF_PASSWORD],
             COUNTRY_CODES[data[CONF_COUNTRY_CODE]],
+            data[CONF_IDENTIFIER],
         )
         await hass.async_add_executor_job(api.connect)
         await hass.async_add_executor_job(api.disconnect)

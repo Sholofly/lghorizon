@@ -6,7 +6,8 @@
         "data": {
           "username": "Gebruikersnaam",
           "password": "Wachtwoord",
-          "country_code": "Provider"
+          "country_code": "Provider",
+          "identifier": "DTV identifier"
         }
       }
     },
