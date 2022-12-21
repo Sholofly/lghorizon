@@ -141,5 +141,5 @@ This component is not provided, supported or maintained by any of the companies 
   - Craig McGowan (GB)
   - Jarne Roussard (BE)
   - Sammy Verdonck (BE)
-  - Jordy Smolders (BE)
+  - Jordi Smolders (BE)
   - [Majkel Łacina (PL)](https://github.com/lacinamichal)
