@@ -314,6 +314,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "channel": self._box.playing_info.channel_title,
             "title": self._box.playing_info.title,
             "image": self._box.playing_info.image,
+            "recording_capacity": self._box.recording_capacity
         }
 
     @property
