@@ -4,7 +4,7 @@ DOMAIN = "lghorizon"
 API = "lghorizon_api"
 CONF_COUNTRY_CODE = "country_code"
 CONF_REMOTE_KEY = "remote_key"
-CONF_IDENTIFIER = "indentifier"
+CONF_IDENTIFIER = "identifier"
 
 RECORD = "record"
 REWIND = "rewind"
