@@ -24,9 +24,9 @@ CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
+                vol.Optional(CONF_COUNTRY_CODE, default="nl"): cv.string,
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(CONF_COUNTRY_CODE, default="nl"): cv.string,
                 vol.Optional(CONF_IDENTIFIER, default=None):cv.string
             }
         )

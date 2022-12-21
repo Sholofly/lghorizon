@@ -3,6 +3,8 @@
   "config": {
     "step": {
       "user": {
+        "title": "LG Horizon - Login details",
+        "description":"Provide the credentials of your Ziggo, Telenet, UPC, Magenta or Virgin account.",
         "data": {
           "username": "Username",
           "password": "Password",
