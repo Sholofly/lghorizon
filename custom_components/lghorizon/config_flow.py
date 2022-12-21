@@ -24,11 +24,11 @@ _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
         vol.Required(CONF_COUNTRY_CODE, default=list(COUNTRY_CODES.keys())[0]): vol.In(
             list(COUNTRY_CODES.keys())
         ),
+        vol.Required(CONF_USERNAME): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
         vol.Optional(CONF_IDENTIFIER):cv.string
         
     }
