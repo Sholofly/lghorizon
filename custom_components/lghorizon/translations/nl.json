@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "LG Horizon - Login details",
-        "description":"Vul de gegveens van je Ziggo, Telenet, UPC, Magenta of Virgin account in.",
+        "description":"Vul de gegevens van je Ziggo, Telenet, UPC, Magenta of Virgin account in.",
         "data": {
           "username": "Gebruikersnaam",
           "password": "Wachtwoord",
