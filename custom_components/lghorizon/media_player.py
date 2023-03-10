@@ -1,17 +1,15 @@
 """Support for interface with a ArrisDCX960 Settopbox."""
 import logging
 import random
-import voluptuous as vol
+import datetime as dt
 import time
-from homeassistant.helpers import (
-    config_validation as cv,
-    entity_platform
-)
-
+import voluptuous as vol
+from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.components.media_player import MediaPlayerEntity, BrowseMedia
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.util import dt as dt_util
 from .const import (
     API,
     DOMAIN,
@@ -19,7 +17,7 @@ from .const import (
     REWIND,
     FAST_FORWARD,
     CONF_REMOTE_KEY,
-    REMOTE_KEY_PRESS
+    REMOTE_KEY_PRESS,
 )
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_APP,
@@ -39,7 +37,7 @@ from homeassistant.components.media_player.const import (
     SUPPORT_SEEK,
     MEDIA_CLASS_DIRECTORY,
     MEDIA_CLASS_TV_SHOW,
-    MEDIA_CLASS_EPISODE
+    MEDIA_CLASS_EPISODE,
 )
 
 from homeassistant.const import (
@@ -57,8 +55,7 @@ from lghorizon import (
     LGHorizonRecordingShow,
     LGHorizonRecordingSingle,
     LGHorizonRecordingListSeasonShow,
-    LGHorizonRecordingEpisode
-    
+    LGHorizonRecordingEpisode,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -76,6 +73,7 @@ async def async_setup_entry(
 
     platform = entity_platform.async_get_current_platform()
     default_service_schema = cv.make_entity_service_schema({})
+
     async def handle_default_services(entity, call):
         _LOGGER.debug(f"Service {call.service} was called for box {entity.unique_id}")
         if call.service == REWIND:
@@ -111,7 +109,7 @@ async def async_setup_entry(
         key_schema,
         handle_default_services,
     )
-  
+
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
     """The home assistant media player."""
@@ -244,6 +242,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 join_param = "&"
             image_url = f"{image_url}{join_param}{str(random.randrange(1000000))}"
         return image_url
+
     @property
     def media_title(self):
         """Return the media title."""
@@ -258,6 +257,28 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     def source_list(self):
         """Return a list with available sources."""
         return [channel for channel in self._channels.keys()]
+
+    @property
+    def media_duration(self) -> int | None:
+        """Duration of current playing media in seconds."""
+        if self._box.playing_info.duration:
+            return int(self._box.playing_info.duration)
+        return None
+
+    @property
+    def media_position(self) -> int | None:
+        """Position of current playing media in seconds."""
+        if self._box.playing_info.position:
+            return int(self._box.playing_info.position)
+        return None
+
+    @property
+    def media_position_updated_at(self) -> dt.datetime | None:
+        """When was the position of the current playing media valid."""
+        if self._box.playing_info.last_position_update:
+            return dt_util.utcnow()
+            return self._box.playing_info.last_position_update
+        return None
 
     async def async_select_source(self, source):
         """Select a new source."""
@@ -314,7 +335,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "channel": self._box.playing_info.channel_title,
             "title": self._box.playing_info.title,
             "image": self._box.playing_info.image,
-            "recording_capacity": self._box.recording_capacity
+            "recording_capacity": self._box.recording_capacity,
         }
 
     @property
@@ -334,13 +355,11 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 children=[],
                 children_media_class=MEDIA_CLASS_DIRECTORY,
             )
-            recordings = await self.hass.async_add_executor_job(
-                self.api.get_recordings
-            )
+            recordings = await self.hass.async_add_executor_job(self.api.get_recordings)
             for recording in recordings:
                 if type(recording) is LGHorizonRecordingListSeasonShow:
                     show: LGHorizonRecordingListSeasonShow = recording
-                    show_media =  BrowseMedia(
+                    show_media = BrowseMedia(
                         title=show.title,
                         media_class=MEDIA_CLASS_TV_SHOW,
                         media_content_type=MEDIA_TYPE_TVSHOW,
@@ -361,7 +380,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         media_content_id=single.id,
                         can_play=True,
                         can_expand=False,
-                        thumbnail=single.image
+                        thumbnail=single.image,
                     )
                     main.children.append(single_media)
             return main
@@ -370,12 +389,12 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 self.api.get_recording_show, media_content_id
             )
             children = []
-            
+
             for episode_data in episodes_data:
                 if type(episode_data) is LGHorizonRecordingEpisode:
                     episode_recording: LGHorizonRecordingEpisode = episode_data
-                    planned: bool = episode_recording.recordingState == 'planned'
-                    title=f"S{episode_recording.seasonNumber:02} E{episode_recording.episodeNumber:02}: {episode_recording.showTitle} - {episode_recording.episodeTitle}"
+                    planned: bool = episode_recording.recordingState == "planned"
+                    title = f"S{episode_recording.seasonNumber:02} E{episode_recording.episodeNumber:02}: {episode_recording.showTitle} - {episode_recording.episodeTitle}"
                     if planned:
                         title += " (planned)"
                     episode_media = BrowseMedia(
@@ -383,14 +402,14 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         media_class=MEDIA_CLASS_EPISODE,
                         media_content_type=MEDIA_TYPE_EPISODE,
                         media_content_id=episode_recording.episodeId,
-                        can_play= not planned,
+                        can_play=not planned,
                         can_expand=False,
-                        thumbnail=episode_recording.image
+                        thumbnail=episode_recording.image,
                     )
                     children.append(episode_media)
                 elif type(episode_data) is LGHorizonRecordingShow:
                     show_recording: LGHorizonRecordingShow = episode_data
-                    planned: bool = show_recording.recordingState == 'planned'
+                    planned: bool = show_recording.recordingState == "planned"
                     title = f"S{show_recording.seasonNumber:02} E{show_recording.episodeNumber:02}: {show_recording.showTitle}"
                     if planned:
                         title += " (planned)"
@@ -401,7 +420,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         media_content_id=show_recording.episodeId,
                         can_play=not planned,
                         can_expand=False,
-                        thumbnail=show_recording.image
+                        thumbnail=show_recording.image,
                     )
                     children.append(show_media)
             show_container = BrowseMedia(
@@ -413,8 +432,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 can_expand=False,
                 children=children,
                 children_media_class=MEDIA_CLASS_EPISODE,
-                thumbnail=episodes_data[0].image
+                thumbnail=episodes_data[0].image,
             )
             return show_container
         return None
-                    
