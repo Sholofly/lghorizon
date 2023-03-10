@@ -277,7 +277,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         """When was the position of the current playing media valid."""
         if self._box.playing_info.last_position_update:
             return dt_util.utcnow()
-            return self._box.playing_info.last_position_update
         return None
 
     async def async_select_source(self, source):
