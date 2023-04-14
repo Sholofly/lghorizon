@@ -33,7 +33,7 @@ You can enable logging by setting up the logging component in HA as follows:
 logger:
   default: warning
   logs:
-    arris_dcx960: debug
+    lghorizon: debug
 ```
 
 **Additional context**
