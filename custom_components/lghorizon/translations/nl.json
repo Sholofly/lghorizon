@@ -21,5 +21,51 @@
     "abort": {
       "already_configured": "Dit account is reeds toegevoegd."
     }
+  },
+  "services": {
+    "record": {
+      "name": "Record",
+      "description": "Start opname",
+      "fields": {
+        "entity_id": {
+          "name": "Entity Id",
+          "description": "Entiteit ID van je mediabox."
+        }
+      }
+    },
+    "rewind": {
+      "name": "Rewind",
+      "description": "Terugspoelen van je opname",
+      "fields": {
+        "entity_id": {
+          "name": "Entity Id",
+          "description": "Entiteit ID van je mediabox."
+        }
+      }
+    },
+    "fast_forward": {
+      "name": "Fast forward",
+      "description": "Vooruitspoelen van je opname.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity Id",
+          "description": "Entiteit ID van je mediabox."
+        }
+      }
+    },
+    "remote_key_press": {
+      "name": "Verstuur knop",
+      "description": "Verstuurt een knop van de afstandsbediening naar e mediabox.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity Id",
+          "description": "Entiteit ID van je mediabox."
+        },
+        "remote_key":{
+          "name": "Knop afstandsbediening",
+          "description": "De te versturen knop."
+        }
+      }
+    }
   }
 }

@@ -21,5 +21,51 @@
     "abort": {
       "already_configured": "This account is already configured."
     }
+  },
+  "services": {
+    "record": {
+      "name": "Record",
+      "description": "Start recording",
+      "fields": {
+        "entity_id": {
+          "name": "Entitiy Id",
+          "description": "Id of your media box."
+        }
+      }
+    },
+    "rewind": {
+      "name": "Rewind",
+      "description": "Rewind playing media.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitiy Id",
+          "description": "Id of your media box."
+        }
+      }
+    },
+    "fast_forward": {
+      "name": "Fast forward",
+      "description": "Fast forward playing media.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitiy Id",
+          "description": "Id of your media box."
+        }
+      }
+    },
+    "remote_key_press": {
+      "name": "Send key",
+      "description": "Send a remote control key press.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitiy Id",
+          "description": "Id of your media box."
+        },
+        "remote_key":{
+          "name": "Remote key",
+          "description": "Key to send"
+        }
+      }
+    }
   }
 }
