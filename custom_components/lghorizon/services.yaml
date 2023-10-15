@@ -1,23 +1,19 @@
 record:
-  translation_key: "record"
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
 
 rewind:
-  translation_key: "rewind"
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
 
 fast_forward:
-  translation_key: "fast_forward"
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
 
 remote_key_press:
-  translation_key: "remote_key_press"
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
