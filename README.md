@@ -81,12 +81,13 @@ After entering your credentials an account selection screen will popup:
 ## Service to change channel
 
 ```yaml
-service: lghorizon.play_media
-service_data:
-  entity_id: media_player.ziggo_beneden
-  media_content_id: 401 # Any channel number, 'Netflix' or 'Videoland'
+service: media_player.play_media
+data:
   media_content_type: channel # 'channel' when media_content_id is channelnumber, 'app' when media_content_id is 'Netflix' or 'Videoland'
-```
+  media_content_id: "401" # Any channel number, 'Netflix' or 'Videoland'
+target:
+  entity_id: media_player.ziggo_beneden
+``
 
 ## Custom services
 
