@@ -87,7 +87,7 @@ data:
   media_content_id: "401" # Any channel number, 'Netflix' or 'Videoland'
 target:
   entity_id: media_player.ziggo_beneden
-``
+```
 
 ## Custom services
 
