@@ -109,7 +109,7 @@ data:
   entity_id: media_player.ziggo_beneden
 
 service: lghorizon.fast_forward
-service_data:
+data:
   entity_id: media_player.ziggo_beneden
 ```
 
