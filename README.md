@@ -95,7 +95,7 @@ This service can be called to start a recording. Note that this shows a pop-up o
 
 ```yaml
 service: lghorizon.record
-service_data:
+data:
   entity_id: media_player.ziggo_beneden
 ```
 
@@ -105,7 +105,7 @@ To stop this action, you can call the standard media_player.play service on the 
 
 ```yaml
 service: lghorizon.rewind
-service_data:
+data:
   entity_id: media_player.ziggo_beneden
 
 service: lghorizon.fast_forward
@@ -117,7 +117,7 @@ This service can be called to emulate a key press on the remote control.
 
 ```yaml
 service: lghorizon.remote_key_press
-service_data:
+data:
   entity_id: media_player.ziggo_beneden
   remote_key: "MediaTopMenu"
 ```
