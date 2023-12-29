@@ -5,7 +5,14 @@ import datetime as dt
 import time
 import voluptuous as vol
 from homeassistant.helpers import config_validation as cv, entity_platform
-from homeassistant.components.media_player import MediaPlayerEntity, BrowseMedia
+from homeassistant.components.media_player import (
+    MediaPlayerEntity,
+    BrowseMedia,
+    MediaPlayerEntityFeature,
+    MediaType,
+    MediaClass,
+    MediaPlayerState
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import HomeAssistantType
@@ -18,33 +25,6 @@ from .const import (
     FAST_FORWARD,
     CONF_REMOTE_KEY,
     REMOTE_KEY_PRESS,
-)
-from homeassistant.components.media_player.const import (
-    MEDIA_TYPE_APP,
-    MEDIA_TYPE_EPISODE,
-    MEDIA_TYPE_CHANNEL,
-    MEDIA_TYPE_TVSHOW,
-    SUPPORT_NEXT_TRACK,
-    SUPPORT_PAUSE,
-    SUPPORT_PLAY,
-    SUPPORT_STOP,
-    SUPPORT_PREVIOUS_TRACK,
-    SUPPORT_SELECT_SOURCE,
-    SUPPORT_TURN_OFF,
-    SUPPORT_TURN_ON,
-    SUPPORT_PLAY_MEDIA,
-    SUPPORT_BROWSE_MEDIA,
-    SUPPORT_SEEK,
-    MEDIA_CLASS_DIRECTORY,
-    MEDIA_CLASS_TV_SHOW,
-    MEDIA_CLASS_EPISODE,
-)
-
-from homeassistant.const import (
-    STATE_OFF,
-    STATE_PAUSED,
-    STATE_PLAYING,
-    STATE_UNAVAILABLE,
 )
 
 from lghorizon import (
@@ -175,43 +155,43 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         """Return the state of the player."""
         if self._box.state == ONLINE_RUNNING:
             if self._box.playing_info is not None and self._box.playing_info.paused:
-                return STATE_PAUSED
-            return STATE_PLAYING
+                return MediaPlayerState.PAUSED
+            return MediaPlayerState.PLAYING
         if self._box.state == ONLINE_STANDBY:
-            return STATE_OFF
-        return STATE_UNAVAILABLE
+            return MediaPlayerState.OFF
+        return MediaPlayerState.UNAVAILABLE
 
     @property
     def media_content_type(self):
         """Return the media type."""
-        return MEDIA_TYPE_EPISODE
+        return MediaType.EPISODE
 
     @property
     def supported_features(self):
         """Return the supported features."""
         if self._box.playing_info.source_type == "app":
             return (
-                SUPPORT_PLAY
-                | SUPPORT_PAUSE
-                | SUPPORT_STOP
-                | SUPPORT_TURN_ON
-                | SUPPORT_TURN_OFF
-                | SUPPORT_SELECT_SOURCE
-                | SUPPORT_PLAY_MEDIA
-                | SUPPORT_BROWSE_MEDIA
+                MediaPlayerEntityFeature.PLAY
+                | MediaPlayerEntityFeature.PAUSE
+                | MediaPlayerEntityFeature.STOP
+                | MediaPlayerEntityFeature.TURN_ON
+                | MediaPlayerEntityFeature.TURN_OFF
+                | MediaPlayerEntityFeature.SELECT_SOURCE
+                | MediaPlayerEntityFeature.PLAY_MEDIA
+                | MediaPlayerEntityFeature.BROWSE_MEDIA
                 # | SUPPORT_SEEK
             )
         return (
-            SUPPORT_PLAY
-            | SUPPORT_PAUSE
-            | SUPPORT_STOP
-            | SUPPORT_TURN_ON
-            | SUPPORT_TURN_OFF
-            | SUPPORT_SELECT_SOURCE
-            | SUPPORT_NEXT_TRACK
-            | SUPPORT_PREVIOUS_TRACK
-            | SUPPORT_PLAY_MEDIA
-            | SUPPORT_BROWSE_MEDIA
+            MediaPlayerEntityFeature.PLAY
+            | MediaPlayerEntityFeature.PAUSE
+            | MediaPlayerEntityFeature.STOP
+            | MediaPlayerEntityFeature.TURN_ON
+            | MediaPlayerEntityFeature.TURN_OFF
+            | MediaPlayerEntityFeature.SELECT_SOURCE
+            | MediaPlayerEntityFeature.NEXT_TRACK
+            | MediaPlayerEntityFeature.PREVIOUS_TRACK
+            | MediaPlayerEntityFeature.PLAY_MEDIA
+            | MediaPlayerEntityFeature.BROWSE_MEDIA
             # | SUPPORT_SEEK
         )
 
@@ -305,12 +285,12 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
     async def async_play_media(self, media_type, media_id, **kwargs):
         """Support changing a channel."""
-        if media_type == MEDIA_TYPE_EPISODE:
+        if media_type == MediaType.EPISODE:
             self._box.play_recording(media_id)
             pass
-        elif media_type == MEDIA_TYPE_APP:
+        elif media_type == MediaType.APP:
             self._box.set_channel(media_id)
-        elif media_type == MEDIA_TYPE_CHANNEL:
+        elif media_type == MediaType.CHANNEL:
             # media_id should only be a channel number
             try:
                 cv.positive_int(media_id)
@@ -346,13 +326,13 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         if media_content_type in [None, "main"]:
             main = BrowseMedia(
                 title="Opnames",
-                media_class=MEDIA_CLASS_DIRECTORY,
+                media_class=MediaClass.DIRECTORY,
                 media_content_type="main",
                 media_content_id="main",
                 can_play=False,
                 can_expand=True,
                 children=[],
-                children_media_class=MEDIA_CLASS_DIRECTORY,
+                children_media_class=MediaClass.DIRECTORY,
             )
             recordings = await self.hass.async_add_executor_job(self.api.get_recordings)
             for recording in recordings:
@@ -360,22 +340,22 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                     show: LGHorizonRecordingListSeasonShow = recording
                     show_media = BrowseMedia(
                         title=show.title,
-                        media_class=MEDIA_CLASS_TV_SHOW,
-                        media_content_type=MEDIA_TYPE_TVSHOW,
+                        media_class=MediaClass.TV_SHOW,
+                        media_content_type=MediaType.TVSHOW,
                         media_content_id=show.showId,
                         can_play=False,
                         can_expand=True,
                         thumbnail=show.image,
                         children=[],
-                        children_media_class=MEDIA_CLASS_DIRECTORY,
+                        children_media_class=MediaClass.DIRECTORY,
                     )
                     main.children.append(show_media)
                 if type(recording) is LGHorizonRecordingSingle:
                     single: LGHorizonRecordingSingle = recording
                     single_media = BrowseMedia(
                         title=single.title,
-                        media_class=MEDIA_CLASS_EPISODE,
-                        media_content_type=MEDIA_TYPE_EPISODE,
+                        media_class=MediaClass.EPISODE,
+                        media_content_type=MediaType.EPISODE,
                         media_content_id=single.id,
                         can_play=True,
                         can_expand=False,
@@ -383,7 +363,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                     )
                     main.children.append(single_media)
             return main
-        elif media_content_type == MEDIA_TYPE_TVSHOW:
+        elif media_content_type == MediaType.TVSHOW:
             episodes_data = await self.hass.async_add_executor_job(
                 self.api.get_recording_show, media_content_id
             )
@@ -398,8 +378,8 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         title += " (planned)"
                     episode_media = BrowseMedia(
                         title=title,
-                        media_class=MEDIA_CLASS_EPISODE,
-                        media_content_type=MEDIA_TYPE_EPISODE,
+                        media_class=MediaClass.EPISODE,
+                        media_content_type=MediaType.EPISODE,
                         media_content_id=episode_recording.episodeId,
                         can_play=not planned,
                         can_expand=False,
@@ -414,8 +394,8 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         title += " (planned)"
                     show_media = BrowseMedia(
                         title=title,
-                        media_class=MEDIA_CLASS_EPISODE,
-                        media_content_type=MEDIA_TYPE_EPISODE,
+                        media_class=MediaClass.EPISODE,
+                        media_content_type=MediaType.EPISODE,
                         media_content_id=show_recording.episodeId,
                         can_play=not planned,
                         can_expand=False,
@@ -424,13 +404,13 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                     children.append(show_media)
             show_container = BrowseMedia(
                 title=episodes_data[0].showTitle,
-                media_class=MEDIA_CLASS_DIRECTORY,
-                media_content_type=MEDIA_TYPE_TVSHOW,
-                media_content_id=MEDIA_TYPE_TVSHOW,
+                media_class=MediaClass.DIRECTORY,
+                media_content_type=MediaType.TVSHOW,
+                media_content_id=MediaType.TVSHOW,
                 can_play=False,
                 can_expand=False,
                 children=children,
-                children_media_class=MEDIA_CLASS_EPISODE,
+                children_media_class=MediaClass.EPISODE,
                 thumbnail=episodes_data[0].image,
             )
             return show_container
