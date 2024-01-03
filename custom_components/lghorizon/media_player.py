@@ -4,6 +4,7 @@ import random
 import datetime as dt
 import time
 import voluptuous as vol
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.components.media_player import (
     MediaPlayerEntity,
@@ -159,7 +160,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             return MediaPlayerState.PLAYING
         if self._box.state == ONLINE_STANDBY:
             return MediaPlayerState.OFF
-        return MediaPlayerState.UNAVAILABLE
+        return STATE_UNAVAILABLE
 
     @property
     def media_content_type(self):
