@@ -9,7 +9,7 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sholofly/lghorizon/issues",
   "requirements": [
-    "lghorizon>=0.6.10"
+    "lghorizon>=0.6.11"
   ],
-  "version": "0.5.8"
+  "version": "0.5.9"
 }
