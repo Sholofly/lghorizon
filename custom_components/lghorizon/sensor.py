@@ -1,9 +1,10 @@
 """Support for interface with a LGHorizon Settopbox."""
+
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_USERNAME
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.core import HomeAssistant
 from .const import (
     API,
     DOMAIN,
@@ -18,16 +19,16 @@ from lghorizon import LGHorizonApi
 
 
 async def async_setup_entry(
-    hass: HomeAssistantType, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Setup platform"""
     sensors = []
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
-    capacity =  await hass.async_add_executor_job(api.get_recording_capacity)
+    capacity = await hass.async_add_executor_job(api.get_recording_capacity)
     if not capacity:
         _LOGGER.info("No recording capacity available. No sensor added.")
         return
- 
+
     username = hass.data[DOMAIN][entry.entry_id][CONF_USERNAME]
     sensors.append(LGHorizonSensor(hass, username, api))
     async_add_entities(sensors, True)
@@ -37,7 +38,7 @@ class LGHorizonSensor(SensorEntity):
     """The LG Horizon Sensor."""
 
     username: str
-    hass: HomeAssistantType
+    hass: HomeAssistant
 
     @property
     def unique_id(self):
@@ -64,9 +65,7 @@ class LGHorizonSensor(SensorEntity):
     def state_class(self):
         return "total"
 
-    def __init__(
-        self, hass: HomeAssistantType, username: str, api: LGHorizonApi
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, username: str, api: LGHorizonApi) -> None:
         """Init the media player."""
         self.api = api
         self.hass = hass
