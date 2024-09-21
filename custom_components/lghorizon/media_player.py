@@ -1,4 +1,5 @@
 """Support for interface with a ArrisDCX960 Settopbox."""
+
 import logging
 import random
 import datetime as dt
@@ -12,11 +13,11 @@ from homeassistant.components.media_player import (
     MediaPlayerEntityFeature,
     MediaType,
     MediaClass,
-    MediaPlayerState
+    MediaPlayerState,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from .const import (
     API,
@@ -43,7 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistantType, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Setup platform"""
     players = []
