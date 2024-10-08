@@ -62,6 +62,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    if CONF_REFRESH_TOKEN in entry.data:
+        _LOGGER.info("New JWT stored: %s", api.refresh_token)
+        new_data = {**entry.data}
+        new_data[CONF_REFRESH_TOKEN] = api.refresh_token
+        hass.config_entries.async_update_entry(entry, data=new_data)
+
     return True
 
 
