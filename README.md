@@ -58,12 +58,13 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 
 ### Parameters
 
-| Parameter  | Required              | Description                         |
-| ---------- | --------------------- | ----------------------------------- |
-| Username   | yes                   | Your provider username              |
-| Password   | yes                   | Your provider password              |
-| Provider   | yes (default 'Ziggo') | Your Provider                       |
-| Identifier | no (only for Telenet) | Your account identifier (see below) |
+| Parameter     | Required              | Description                         |
+| ------------  | --------------------- | ----------------------------------- |
+| Username      | yes                   | Your provider username              |
+| Password      | yes                   | Your provider password              |
+| Provider      | yes (default 'Ziggo') | Your Provider                       |
+| Identifier    | no (only for Telenet) | Your account identifier (see below) |
+| Refresh Token | no (only for GB)      | A JWT Token (see below)             |
 
 ## Configuration Telenet multiple accounts
 
@@ -77,6 +78,27 @@ After entering your credentials an account selection screen will popup:
 - In the source code find the value of the box. Usually starts with DTV
   ![Identifier code](/images/Telenet%20code.png)
 - Use that code in the config of your telenet account in HA
+
+## Configuration for Virgin GB
+For the Virgin GB integration the Password is not used, instead, you need JWT token.   
+To get the JWT token you need to download a plugin and then login to your Virgin Box from a web browser as follows.
+
+1.  Download a Plug to get access to the tokens:
+
+- For Firefox use [JWT Debugger](https://addons.mozilla.org/en-GB/firefox/addon/jwtio-debugger/)
+- For Chrome use [JWT Inspector](https://chromewebstore.google.com/detail/jwt-inspector/jgjihoodklabhdoeffdjofnknfijolgk?hl=en&pli=1)
+- For Edge use [JwtToken](https://microsoftedge.microsoft.com/addons/detail/jwttoken/hbppejkakghldbgjeblinppeindhpeoh?hl=en-us)
+
+2. Login to your Virgin box using the web browser 
+[https://virgintvgo.virginmedia.com/](https://virgintvgo.virginmedia.com/)
+
+3. Open the JWT extension and copy the JWT token.
+Firefox example:
+![account selection](/images/GB%20Firefox%20JWT.png)
+(you need the bit starting `eyJ0...` - make sure you get all of it - its quite long.
+_NOTE: Keep this token secure/treat as a password - it gives full access to your virgin box._
+
+4.  Paste the JWT token into the Refresh Token parameter
 
 ## Service to change channel
 

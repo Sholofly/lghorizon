@@ -9,7 +9,8 @@
           "username": "Username",
           "password": "Password",
           "country_code": "Provider",
-          "identifier": "DTV identifier"
+          "identifier": "DTV identifier",
+          "refresh_token": "Refresh Token (GB)"
         }
       }
     },
