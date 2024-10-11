@@ -80,7 +80,7 @@ After entering your credentials an account selection screen will popup:
 - Use that code in the config of your telenet account in HA
 
 ## Configuration for Virgin GB
-For the Virgin GB integration the Password is not used, instead, you need JWT token.   
+For the Virgin GB integration the Password is not used, instead, you need JWT token.
 To get the JWT token you need to download a plugin and then login to your Virgin Box from a web browser as follows.
 
 1.  Download a Plug to get access to the tokens:
@@ -89,7 +89,7 @@ To get the JWT token you need to download a plugin and then login to your Virgin
 - For Chrome use [JWT Inspector](https://chromewebstore.google.com/detail/jwt-inspector/jgjihoodklabhdoeffdjofnknfijolgk?hl=en&pli=1)
 - For Edge use [JwtToken](https://microsoftedge.microsoft.com/addons/detail/jwttoken/hbppejkakghldbgjeblinppeindhpeoh?hl=en-us)
 
-2. Login to your Virgin box using the web browser 
+2. Login to your Virgin box using the web browser
 [https://virgintvgo.virginmedia.com/](https://virgintvgo.virginmedia.com/)
 
 3. Open the JWT extension and copy the JWT token.
@@ -167,3 +167,4 @@ This component is not provided, supported or maintained by any of the companies 
   - Sammy Verdonck (BE)
   - Jordi Smolders (BE)
   - [Majkel Łacina (PL)](https://github.com/lacinamichal)
+  - [Colin Robbins (UK)](https://github.com/ColinRobbins)
