@@ -7,7 +7,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.core import HomeAssistant
 from .const import (
     API,
-    DOMAIN,
+    CONF_COUNTRY_CODE,
+    COUNTRY_CODES,
+    DOMAIN
 )
 from datetime import timedelta
 import logging
@@ -23,6 +25,12 @@ async def async_setup_entry(
 ) -> None:
     """Setup platform"""
     sensors = []
+    
+    country = COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]][0:2]
+    if country == "gb":
+         _LOGGER.debug("Recording capacity feature not available in GB. No sensor added.")
+         return
+
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
     capacity = await hass.async_add_executor_job(api.get_recording_capacity)
     if not capacity:
