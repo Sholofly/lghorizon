@@ -28,7 +28,7 @@ async def async_setup_entry(
     
     country = COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]][0:2]
     if country == "gb":
-         _LOGGER.debug("Recording capacity feature available in GB. No sensor added.")
+         _LOGGER.debug("Recording capacity feature not available in GB. No sensor added.")
          return
 
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
