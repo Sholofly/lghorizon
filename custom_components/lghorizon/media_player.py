@@ -123,7 +123,13 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "model": self._box.model or "unknown",
         }
 
-    def __init__(self, box: LGHorizonBox, api: LGHorizonApi, hass: HomeAssistant, entry: ConfigEntry):
+    def __init__(
+        self,
+        box: LGHorizonBox,
+        api: LGHorizonApi,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+    ):
         """Init the media player."""
         self._box = box
         self.api = api
@@ -131,12 +137,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         self.entry = entry
         self.box_id = box.deviceId
         self.box_name = box.deviceFriendlyName
-        self._create_channel_map()
-
-    def _create_channel_map(self):
-        self._channels = {}
-        for channel in self.api._channels.values():
-            self._channels[channel.title] = channel.title
 
     async def async_added_to_hass(self):
         """Use lifecycle hooks."""
@@ -157,9 +157,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             _LOGGER.info("New JWT stored (2): %s", self.api.refresh_token)
             new_data = {**self.entry.data}
             new_data[CONF_REFRESH_TOKEN] = self.api.refresh_token
-            self.hass.config_entries.async_update_entry(
-                self.entry, data=new_data
-            )
+            self.hass.config_entries.async_update_entry(self.entry, data=new_data)
 
     async def async_update(self):
         """Update the box."""
@@ -256,7 +254,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def source_list(self):
         """Return a list with available sources."""
-        return [channel for channel in self._channels.keys()]
+        channel_list = []
+        for channel in self._box._channels.values():
+            channel_list.append(channel.title)
+        return channel_list
 
     @property
     def media_duration(self) -> int | None:

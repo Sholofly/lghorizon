@@ -12,11 +12,19 @@
           "identifier": "DTV identifier",
           "refresh_token": "Refresh Token (GB)"
         }
+      },
+      "profile": {
+        "title": "LG Horizon - Selecteer profiel",
+        "description":"Selecteer het profiel waarvan je de favoriete kanalen wilt tonen",
+        "data": {
+          "profile_id": "Profiel"
+        }
       }
     },
     "error": {
       "cannot_connect": "Kan niet verbinden",
       "invalid_auth": "Ongeldige logingegevens",
+      "account_locked": "Je account is geblokkeerd. Wacht 10 minuten voor je het weer probeert.",
       "unknown": "Onbekende fout"
     },
     "abort": {

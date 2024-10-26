@@ -1,4 +1,5 @@
 """The lghorizon integration."""
+
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
@@ -13,7 +14,8 @@ from .const import (
     CONF_REFRESH_TOKEN,
     API,
     COUNTRY_CODES,
-    CONF_IDENTIFIER
+    CONF_IDENTIFIER,
+    CONF_PROFILE_ID,
 )
 
 from lghorizon import LGHorizonApi
@@ -28,8 +30,8 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_COUNTRY_CODE, default="nl"): cv.string,
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(CONF_IDENTIFIER):cv.string,
-                vol.Optional(CONF_REFRESH_TOKEN):cv.string
+                vol.Optional(CONF_IDENTIFIER): cv.string,
+                vol.Optional(CONF_REFRESH_TOKEN): cv.string,
             }
         )
     },
@@ -45,14 +47,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     refresh_token = None
     if CONF_REFRESH_TOKEN in entry.data:
-       refresh_token = entry.data[CONF_REFRESH_TOKEN]
-    
+        refresh_token = entry.data[CONF_REFRESH_TOKEN]
+
     api = LGHorizonApi(
         entry.data[CONF_USERNAME],
         entry.data[CONF_PASSWORD],
         COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]],
         telenet_identifier,
         refresh_token,
+        profile_id=entry.data[CONF_PROFILE_ID],
     )
     await hass.async_add_executor_job(api.connect)
     hass.data.setdefault(DOMAIN, {})

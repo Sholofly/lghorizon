@@ -12,11 +12,19 @@
           "identifier": "DTV identifier",
           "refresh_token": "Refresh Token (GB)"
         }
+      },
+      "profile": {
+        "title": "LG Horizon - Select profile",
+        "description":"Select your profile to show it's favorite channels only",
+        "data": {
+          "profile_id": "Profile"
+        }
       }
     },
     "error": {
       "cannot_connect": "Can't connect",
       "invalid_auth": "Invalid credentials",
+      "account_locked": "Your account is locked. Please wait 10 minutes and try again.",
       "unknown": "Unknown error"
     },
     "abort": {
