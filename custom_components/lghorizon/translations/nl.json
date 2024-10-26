@@ -3,14 +3,20 @@
   "config": {
     "step": {
       "user": {
-        "title": "LG Horizon - Login details",
+        "title": "LG Horizon - Provider en gebruikersnaam",
         "description":"Vul de gegevens van je Ziggo, Telenet, UPC, Magenta of Virgin account in.",
         "data": {
-          "username": "Gebruikersnaam",
-          "password": "Wachtwoord",
           "country_code": "Provider",
+          "username": "Gebruikersnaam"
+        }
+      },
+      "credentials":{
+        "title": "LG Horizon - Credentials",
+        "description":"Vul de credentias van je Ziggo, Telenet, UPC/Sunrise, Magenta of Virgin account in.",
+        "data": {
+          "password": "Wachtwoord",
           "identifier": "DTV identifier",
-          "refresh_token": "Refresh Token (GB & CH)"
+          "refresh_token": "Refresh Token"
         }
       },
       "profile": {

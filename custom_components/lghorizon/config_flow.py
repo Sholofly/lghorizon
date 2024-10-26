@@ -10,7 +10,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ConfigEntryAuthFailed
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 from homeassistant.helpers.selector import (
     SelectSelectorMode,
@@ -59,11 +59,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for lghorizon."""
 
     VERSION = 1
-    CONFIG_DATA: dict[str, Any] = {}
+    CONFIG_DATA: dict[str, Any] = None
+
     customer: LGHorizonCustomer = None
 
     async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
+        self,
+        user_input: dict[str, Any] | None = None,
+        errors: dict[str, str] | None = None,
     ) -> FlowResult:
         """Handle the initial step."""
 
@@ -73,19 +76,63 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_COUNTRY_CODE, default=list(COUNTRY_CODES.keys())[0]
                 ): vol.In(list(COUNTRY_CODES.keys())),
                 vol.Required(CONF_USERNAME): cv.string,
-                vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(CONF_IDENTIFIER): cv.string,
-                vol.Optional(CONF_REFRESH_TOKEN): cv.string,
             }
         )
 
         if user_input is None:
-            return self.async_show_form(step_id="user", data_schema=user_schema)
+            return self.async_show_form(
+                step_id="user", data_schema=user_schema, errors=errors
+            )
 
-        errors = {}
+        self.CONFIG_DATA = {
+            CONF_USERNAME: None,
+            CONF_PASSWORD: None,
+            CONF_COUNTRY_CODE: None,
+            CONF_IDENTIFIER: None,
+            CONF_PROFILE_ID: None,
+            CONF_REFRESH_TOKEN: None,
+        }
+
+        self.CONFIG_DATA.update(user_input)
+
+        return await self.async_step_credentials()
+
+    async def async_step_credentials(
+        self,
+        user_input: dict[str, Any] | None = None,
+        errors: dict[str, str] | None = None,
+    ) -> FlowResult:
+        """Enter credentials step."""
+
+        cred_schema: vol.Schema = vol.Schema({})
+
+        country_code = COUNTRY_CODES[self.CONFIG_DATA[CONF_COUNTRY_CODE]][0:2]
+
+        if country_code not in ("gb", "ch"):
+            cred_schema = cred_schema.extend({vol.Required(CONF_PASSWORD): cv.string})
+        else:
+            cred_schema = cred_schema.extend(
+                {
+                    vol.Optional(CONF_REFRESH_TOKEN): cv.string,
+                }
+            )
+
+        if country_code == "be":
+            cred_schema = cred_schema.extend(
+                {
+                    vol.Optional(CONF_IDENTIFIER): cv.string,
+                }
+            )
+
+        if user_input is None:
+            return self.async_show_form(step_id="credentials", data_schema=cred_schema)
+
+        self.CONFIG_DATA.update(user_input)
+
+        errors: dict[str, str] = {}
 
         try:
-            await self.validate_input(self.hass, user_input)
+            await self.validate_config(self.hass)
         except CannotConnect:
             errors["base"] = "cannot_connect"
         except InvalidAuth:
@@ -93,58 +140,23 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         except AccountLocked:
             errors["base"] = "account_locked"
         except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
-        else:
-            self.CONFIG_DATA.update(user_input)
-            profile_step = await self.async_step_profile(user_input=user_input)
-            return profile_step
-        user_form = await self.async_show_form(
-            step_id="user", data_schema=user_schema, errors=errors
-        )
-        return user_form
-
-    async def validate_input(self, hass: HomeAssistant, data: dict[str, Any]):
-        """Validate the user input allows us to connect."""
-
-        try:
-            telenet_identifier = None
-            if CONF_IDENTIFIER in data:
-                telenet_identifier = data[CONF_IDENTIFIER]
-
-            refresh_token = None
-            if CONF_REFRESH_TOKEN in data:
-                refresh_token = data[CONF_REFRESH_TOKEN]
-
-            api = LGHorizonApi(
-                data[CONF_USERNAME],
-                data[CONF_PASSWORD],
-                COUNTRY_CODES[data[CONF_COUNTRY_CODE]],
-                telenet_identifier,
-                refresh_token,
+            _LOGGER.exception("Unexpected exception")
+        if len(errors) > 0:
+            return self.async_show_form(
+                step_id="credentials", data_schema=cred_schema, errors=errors
             )
-            await hass.async_add_executor_job(api.connect)
-            # store customer for profile extraction
-            self.customer = api.customer
-            await hass.async_add_executor_job(api.disconnect)
-        except LGHorizonApiUnauthorizedError:
-            raise InvalidAuth
-        except LGHorizonApiConnectionError:
-            raise CannotConnect
-        except LGHorizonApiLockedError:
-            raise AccountLocked
-        except Exception as ex:
-            _LOGGER.error(ex)
-            raise CannotConnect
+        return await self.async_step_profile()
 
     async def async_step_profile(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        profile_selectors = []
-        for profile in self.customer.profiles.values():
-            profile_selectors.append(
-                SelectOptionDict(value=profile.profile_id, label=profile.name),
-            )
+        """Select profile step."""
+        profile_selectors = [
+            SelectOptionDict(value=profile.profile_id, label=profile.name)
+            for profile in self.customer.profiles.values()
+        ]
+
         profile_schema = vol.Schema(
             {
                 vol.Required(CONF_PROFILE_ID): SelectSelector(
@@ -165,3 +177,28 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=self.CONFIG_DATA[CONF_USERNAME], data=self.CONFIG_DATA
         )
+
+    async def validate_config(self, hass: HomeAssistant):
+        """Validate the user input allows us to connect."""
+
+        try:
+            api = LGHorizonApi(
+                self.CONFIG_DATA[CONF_USERNAME],
+                self.CONFIG_DATA[CONF_PASSWORD],
+                COUNTRY_CODES[self.CONFIG_DATA[CONF_COUNTRY_CODE]],
+                self.CONFIG_DATA[CONF_IDENTIFIER],
+                self.CONFIG_DATA[CONF_REFRESH_TOKEN],
+            )
+            await hass.async_add_executor_job(api.connect)
+            # store customer for profile extraction
+            self.customer = api.customer
+            await hass.async_add_executor_job(api.disconnect)
+        except LGHorizonApiUnauthorizedError as lgau_err:
+            raise InvalidAuth from lgau_err
+        except LGHorizonApiConnectionError as lgac_err:
+            raise CannotConnect from lgac_err
+        except LGHorizonApiLockedError as lgal_err:
+            raise AccountLocked from lgal_err
+        except Exception as ex:
+            _LOGGER.error(ex)
+            raise CannotConnect from ex
