@@ -255,7 +255,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     def source_list(self):
         """Return a list with available sources."""
         channel_list = []
-        for channel in self._box._channels.values():
+        for channel in self.api.get_display_channels():
             channel_list.append(channel.title)
         return channel_list
 
