@@ -49,13 +49,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if CONF_REFRESH_TOKEN in entry.data:
         refresh_token = entry.data[CONF_REFRESH_TOKEN]
 
+    profile_id = None
+    if CONF_PROFILE_ID in entry.data:
+        profile_id = entry.data[CONF_PROFILE_ID]
+
     api = LGHorizonApi(
         entry.data[CONF_USERNAME],
         entry.data[CONF_PASSWORD],
         COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]],
         telenet_identifier,
         refresh_token,
-        profile_id=entry.data[CONF_PROFILE_ID],
+        profile_id=profile_id,
     )
     await hass.async_add_executor_job(api.connect)
     hass.data.setdefault(DOMAIN, {})
