@@ -59,12 +59,12 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 ### Parameters
 
 | Parameter     | Required              | Description                         |
-| ------------  | --------------------- | ----------------------------------- |
+| ------------- | --------------------- | ----------------------------------- |
 | Username      | yes                   | Your provider username              |
 | Password      | yes                   | Your provider password              |
 | Provider      | yes (default 'Ziggo') | Your Provider                       |
 | Identifier    | no (only for Telenet) | Your account identifier (see below) |
-| Refresh Token | no (only for GB)      | A JWT Token (see below)             |
+| Refresh Token | no (only for GB & CH) | A JWT Token (see below)             |
 
 ## Configuration Telenet multiple accounts
 
@@ -79,8 +79,9 @@ After entering your credentials an account selection screen will popup:
   ![Identifier code](/images/Telenet%20code.png)
 - Use that code in the config of your telenet account in HA
 
-## Configuration for Virgin GB
-For the Virgin GB integration the Password is not used, instead, you need JWT token.
+## Configuration for Virgin GB and Sunrise (CH)
+
+For the Virgin GB and the Sunrise CH integration the Password is not used, instead, you need JWT token.
 To get the JWT token you need to download a plugin and then login to your Virgin Box from a web browser as follows.
 
 1.  Download a Plug to get access to the tokens:
@@ -90,15 +91,16 @@ To get the JWT token you need to download a plugin and then login to your Virgin
 - For Edge use [JwtToken](https://microsoftedge.microsoft.com/addons/detail/jwttoken/hbppejkakghldbgjeblinppeindhpeoh?hl=en-us)
 
 2. Login to your Virgin box using the web browser
-[https://virgintvgo.virginmedia.com/](https://virgintvgo.virginmedia.com/)
+   GB: [https://virgintvgo.virginmedia.com/](https://virgintvgo.virginmedia.com/)
+   CH: [https://www.sunrisetv.ch/](https://www.sunrisetv.ch/)
 
 3. Open the JWT extension and copy the JWT token.
-Firefox example:
-![account selection](/images/GB%20Firefox%20JWT.png)
-(you need the bit starting `eyJ0...` - make sure you get all of it - its quite long.
-_NOTE: Keep this token secure/treat as a password - it gives full access to your virgin box._
+   Firefox example:
+   ![account selection](/images/GB%20Firefox%20JWT.png)
+   (you need the bit starting `eyJ0...` - make sure you get all of it - its quite long.
+   _NOTE: Keep this token secure/treat as a password - it gives full access to your virgin / sunrise box._
 
-4.  Paste the JWT token into the Refresh Token parameter
+4. Paste the JWT token into the Refresh Token parameter
 
 ## Service to change channel
 

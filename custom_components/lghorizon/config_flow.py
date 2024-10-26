@@ -99,10 +99,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.CONFIG_DATA.update(user_input)
             profile_step = await self.async_step_profile(user_input=user_input)
             return profile_step
-
-        return await self.async_show_form(
+        user_form = await self.async_show_form(
             step_id="user", data_schema=user_schema, errors=errors
         )
+        return user_form
 
     async def validate_input(self, hass: HomeAssistant, data: dict[str, Any]):
         """Validate the user input allows us to connect."""

@@ -10,7 +10,7 @@
           "password": "Password",
           "country_code": "Provider",
           "identifier": "DTV identifier",
-          "refresh_token": "Refresh Token (GB)"
+          "refresh_token": "Refresh Token (GB & CH)"
         }
       },
       "profile": {
