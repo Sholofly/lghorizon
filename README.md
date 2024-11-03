@@ -79,7 +79,7 @@ After entering your credentials an account selection screen will popup:
   ![Identifier code](/images/Telenet%20code.png)
 - Use that code in the config of your telenet account in HA
 
-## Configuration for Virgin GB and Sunrise (CH)
+## Configuration for Virgin(GB), Sunrise (CH), Telenet (BE) and BASE (be)
 
 For the Virgin GB and the Sunrise CH integration the Password is not used, instead, you need JWT token.
 To get the JWT token you need to download a plugin and then login to your Virgin Box from a web browser as follows.
