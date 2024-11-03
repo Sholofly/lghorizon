@@ -101,7 +101,7 @@ To get the JWT token you need to download a plugin and then login to your Virgin
    You then need to copy the bit starting `eyJ0...` - make sure you get all of it - it is about 800 characters long.)
    _NOTE: Keep this token secure/treat as a password - it gives full access to your virgin / sunrise box._
 
-5. Paste the JWT token into the Refresh Token parameter
+4. Paste the JWT token into the Refresh Token parameter
 
 ## Service to change channel
 
