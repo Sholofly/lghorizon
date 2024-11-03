@@ -158,16 +158,17 @@ This component is not provided, supported or maintained by any of the companies 
 - The excellent start from [IIStevowII](https://github.com/IIStevowII/ziggo-mediabox-next) for a single settopbox inspired me!
 - The nodejs script [NextRemoteJs from basst85](https://github.com/basst85/NextRemoteJs/) used as reference to compare results.
 - The input from [Jochen Siegenthaler](https://github.com/jsiegenthaler/). His [Homebridge](https://github.com/jsiegenthaler/homebridge-eosstb) development helped me forward.
+- [Colin Robbins (UK)](https://github.com/ColinRobbins) did a massive job by researching and implementing the refresh token option. Cheers m8!
 - Contributions on this project and the lghorizon-api package by:
   - [shortwood](https://github.com/shortwood)
   - [michael-geerts](https://github.com/michael-geerts)
   - [caraar12345](https://github.com/caraar12345)
   - [pejeio](https://github.com/pejeio)
   - [dynasticorpheus](https://github.com/dynasticorpheus)
+  - [Colin Robbins (UK)](https://github.com/ColinRobbins)
 - Testing by:
   - Craig McGowan (GB)
   - Jarne Roussard (BE)
   - Sammy Verdonck (BE)
   - Jordi Smolders (BE)
   - [Majkel Łacina (PL)](https://github.com/lacinamichal)
-  - [Colin Robbins (UK)](https://github.com/ColinRobbins)
