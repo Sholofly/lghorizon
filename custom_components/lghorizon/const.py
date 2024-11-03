@@ -18,6 +18,7 @@ COUNTRY_CODES = {
     "Ziggo": "nl",
     "Telenet (BE)": "be-nl",
     "Telenet (BE, PREPROD)": "be-nl-preprod",
+    "BASE TV (BE)": "be-basetv",
     # "Telenet (FR)": "be-fr",
     "Magenta": "at",
     "UPC Switzerland": "ch",
