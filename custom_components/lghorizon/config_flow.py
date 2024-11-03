@@ -108,7 +108,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         country_code = COUNTRY_CODES[self.CONFIG_DATA[CONF_COUNTRY_CODE]][0:2]
 
-        if country_code not in ("gb", "ch"):
+        if country_code not in ("gb", "ch", "be"):
             cred_schema = cred_schema.extend({vol.Required(CONF_PASSWORD): cv.string})
         else:
             cred_schema = cred_schema.extend(
