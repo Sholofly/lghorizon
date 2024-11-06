@@ -82,26 +82,23 @@ After entering your credentials an account selection screen will popup:
 ## Configuration for Virgin(GB), Sunrise (CH), Telenet (BE) and BASE (be)
 
 For the Virgin GB and the Sunrise CH integration the Password is not used, instead, you need JWT token.
-To get the JWT token you need to download a plugin and then login to your Virgin Box from a web browser as follows.
+To get the JWT token you need to download a plugin and then login to your Virgin Box from a **FireFox** web browser as follows.
 
-1.  Download a Plug to get access to the tokens:
+1.  Download the [JWT Debugger plugin](https://addons.mozilla.org/en-GB/firefox/addon/jwtio-debugger/)  to get access to the tokens.
 
-- For Firefox use [JWT Debugger](https://addons.mozilla.org/en-GB/firefox/addon/jwtio-debugger/)
-- For Chrome use [JWT Inspector](https://chromewebstore.google.com/detail/jwt-inspector/jgjihoodklabhdoeffdjofnknfijolgk?hl=en&pli=1)
-- For Edge use [JwtToken](https://microsoftedge.microsoft.com/addons/detail/jwttoken/hbppejkakghldbgjeblinppeindhpeoh?hl=en-us)
-
-2. Login to your Virgin box using the web browser
+2. Login to your Virgin box using Firefox as your web browser:
+   
    GB: [https://virgintvgo.virginmedia.com/](https://virgintvgo.virginmedia.com/)
    CH: [https://www.sunrisetv.ch/](https://www.sunrisetv.ch/)
-
-3. Open the JWT extension and copy the JWT token.
-   Firefox example:
+   BE: [Telenet TV-Box](https://www.telenet.tv/nl/home)
+   
+4. Open the JWT extension and copy the JWT token.
    ![account selection](/images/GB%20Firefox%20JWT.png)
    (You need to select “open JWT from”, then select “flutter.web_secure_storge…” as per the screen shot.
    You then need to copy the bit starting `eyJ0...` - make sure you get all of it - it is about 800 characters long.)
    _NOTE: Keep this token secure/treat as a password - it gives full access to your virgin / sunrise box._
 
-4. Paste the JWT token into the Refresh Token parameter
+5. Paste the JWT token into the Refresh Token parameter
 
 ## Service to change channel
 
