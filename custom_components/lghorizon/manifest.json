@@ -9,7 +9,8 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sholofly/lghorizon/issues",
   "requirements": [
-    "lghorizon>=0.8.4"
+    "lghorizon>=0.8.4",
+    "homeassistant>=2025.3.0"
   ],
-  "version": "0.7.5"
+  "version": "0.7.6"
 }
