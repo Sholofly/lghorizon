@@ -1,6 +1,7 @@
 """Support for interface with a ArrisDCX960 Settopbox."""
 
 # pylint: disable=no-name-in-module
+import asyncio
 import logging
 import random
 import datetime as dt
@@ -325,7 +326,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 return
             if self._box.playing_info.source_type == "app":
                 self._box.send_key_to_box("TV")
-                time.sleep(1)
+                await asyncio.sleep(1)
 
             for digit in media_id:
                 self._box.send_key_to_box(f"{digit}")
