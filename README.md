@@ -63,8 +63,8 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 | Username      | yes                   | Your provider username              |
 | Password      | yes                   | Your provider password              |
 | Provider      | yes (default 'Ziggo') | Your Provider                       |
-| Identifier    | no (only for Telenet) | Your account identifier (see below) |
-| Refresh Token | no (only for GB & CH) | A JWT Token (see below)             |
+| DTV Identifier    | no (only for Telenet) | Your account identifier (see below) |
+| Refresh Token | no (only for BE, GB & CH) | A JWT Token (see below)             |
 
 ## Configuration Telenet multiple accounts
 
@@ -81,24 +81,20 @@ After entering your credentials an account selection screen will popup:
 
 ## Configuration for Virgin(GB), Sunrise (CH), Telenet (BE) and BASE (be)
 
-For the Virgin GB and the Sunrise CH integration the Password is not used, instead, you need JWT token.
-To get the JWT token you need to download a plugin and then login to your Virgin Box from a **FireFox** web browser as follows.
+For the Telenet BE, Virgin GB and the Sunrise CH integration the Password is not used, instead, you need your refresh token.
+To get the refresh token you need to open the developer toolbar in your chromium based browser.
 
-1.  Download the [JWT Debugger plugin](https://addons.mozilla.org/en-GB/firefox/addon/jwtio-debugger/)  to get access to the tokens.
-
-2. Login to your Virgin box using Firefox as your web browser:
+1. Login to your Virgin box using any Chromium based (i.e. Chrome, Edge) as your web browser:
    
    GB: [https://virgintvgo.virginmedia.com/](https://virgintvgo.virginmedia.com/)
    CH: [https://www.sunrisetv.ch/](https://www.sunrisetv.ch/)
    BE: [Telenet TV-Box](https://www.telenet.tv/nl/home)
    
-4. Open the JWT extension and copy the JWT token.
-   ![account selection](/images/GB%20Firefox%20JWT.png)
-   (You need to select “open JWT from”, then select “flutter.web_secure_storge…” as per the screen shot.
-   You then need to copy the bit starting `eyJ0...` - make sure you get all of it - it is about 800 characters long.)
-   _NOTE: Keep this token secure/treat as a password - it gives full access to your virgin / sunrise box._
+4. Open the 'application' tab in your developer toolbar (open the toolbar with F12)
 
-5. Paste the JWT token into the Refresh Token parameter
+5. In the left panel navigate to 'local storage' and click on the first line that has the same URL as your page URL starts with
+   
+7. On the right side copy the value under: flutter._WEB_SECURE_STORAGE_refreshToken
 
 ## Service to change channel
 
