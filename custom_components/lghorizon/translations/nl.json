@@ -23,7 +23,8 @@
         "title": "LG Horizon - Selecteer profiel",
         "description": "Selecteer het profiel waarvan je de favoriete kanalen wilt tonen",
         "data": {
-          "profile_id": "Profiel"
+          "profile_id": "Profiel",          
+          "channel_sort": "Kanaalvolgorde"
         }
       }
     },
