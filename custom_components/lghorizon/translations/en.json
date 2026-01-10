@@ -23,7 +23,8 @@
         "title": "LG Horizon - Select profile",
         "description": "Select your profile to show it's favorite channels only",
         "data": {
-          "profile_id": "Profile"
+          "profile_id": "Profile",
+          "channel_sort": "Channel sort order"
         }
       }
     },
