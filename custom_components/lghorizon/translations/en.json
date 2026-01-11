@@ -24,7 +24,9 @@
         "description": "Select your profile to show it's favorite channels only",
         "data": {
           "profile_id": "Profile",
-          "channel_sort": "Channel sort order"
+          "channel_sort": "Channel sort order",          
+          "channel_sort_alpha": "Alphabetical",          
+          "channel_sort_number": "Channel number"
         }
       }
     },
@@ -36,6 +38,14 @@
     },
     "abort": {
       "already_configured": "This account is already configured."
+    }
+  },
+  "selector": {
+    "channel_sort": {
+      "options": {
+        "alpha": "Alfabetical",
+        "number": "Channel number"
+      }
     }
   },
   "services": {
