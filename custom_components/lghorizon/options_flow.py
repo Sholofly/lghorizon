@@ -3,7 +3,7 @@
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import OptionsFlow
+from homeassistant.config_entries import OptionsFlowWithReload
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
     SelectSelector,
@@ -28,7 +28,7 @@ OPTIONS_SCHEMA = vol.Schema(
 )
 
 
-class OptionsFlowHandler(OptionsFlow):
+class OptionsFlowHandler(OptionsFlowWithReload):
     """Handle options flow for LG Horizon integration."""
 
     async def async_step_init(

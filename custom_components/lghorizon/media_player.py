@@ -101,13 +101,6 @@ async def async_setup_entry(
         handle_default_services,
     )
 
-    # Reload the config entry when options change so runtime option updates take effect
-    async def _async_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Handle config entry updates by reloading the entry."""
-        await hass.config_entries.async_reload(entry.entry_id)
-
-    entry.add_update_listener(_async_entry_updated)
-
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
     """The home assistant media player."""
