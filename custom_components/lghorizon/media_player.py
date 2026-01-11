@@ -100,6 +100,13 @@ async def async_setup_entry(
         handle_default_services,
     )
 
+    # Reload the config entry when options change so runtime option updates take effect
+    async def _async_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+        """Handle config entry updates by reloading the entry."""
+        await hass.config_entries.async_reload(entry.entry_id)
+
+    entry.add_update_listener(_async_entry_updated)
+
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
     """The home assistant media player."""
@@ -261,7 +268,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def source_list(self):
         """Return a list with available sources."""
-        sort_mode = self.entry.data.get(CONF_CHANNEL_SORT, "number")
+        # Prefer runtime options (entry.options) over initial setup data (entry.data)
+        sort_mode = self.entry.options.get(
+            CONF_CHANNEL_SORT, self.entry.data.get(CONF_CHANNEL_SORT, "number")
+        )
         channels = self.api.get_display_channels() or []
         if sort_mode == "number":
             sorted_channels = sorted(channels, key=lambda ch: int(ch.channel_number))
