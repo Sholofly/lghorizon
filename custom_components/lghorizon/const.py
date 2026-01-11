@@ -7,6 +7,7 @@ CONF_REFRESH_TOKEN = "refresh_token"
 CONF_REMOTE_KEY = "remote_key"
 CONF_IDENTIFIER = "identifier"
 CONF_PROFILE_ID = "profile_id"
+CONF_CHANNEL_SORT = "channel_sort"
 
 
 RECORD = "record"

@@ -41,6 +41,7 @@ from .const import (
     REWIND,
     FAST_FORWARD,
     CONF_REMOTE_KEY,
+    CONF_CHANNEL_SORT,
     REMOTE_KEY_PRESS,
 )
 
@@ -260,10 +261,13 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def source_list(self):
         """Return a list with available sources."""
-        channel_list = []
-        for channel in self.api.get_display_channels():
-            channel_list.append(channel.title)
-        return channel_list
+        sort_mode = self.entry.data.get(CONF_CHANNEL_SORT, "number")
+        channels = self.api.get_display_channels() or []
+        if sort_mode == "number":
+            sorted_channels = sorted(channels, key=lambda ch: int(ch.channel_number))
+        else:
+            sorted_channels = sorted(channels, key=lambda ch: ch.title.lower())
+        return [ch.title for ch in sorted_channels]
 
     @property
     def media_duration(self) -> int | None:
