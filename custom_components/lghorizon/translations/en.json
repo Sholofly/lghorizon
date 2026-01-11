@@ -24,8 +24,8 @@
         "description": "Select your profile to show it's favorite channels only",
         "data": {
           "profile_id": "Profile",
-          "channel_sort": "Channel sort order",          
-          "channel_sort_alpha": "Alphabetical",          
+          "channel_sort": "Channel sort order",
+          "channel_sort_alpha": "Alphabetical",
           "channel_sort_number": "Channel number"
         }
       }
@@ -38,6 +38,17 @@
     },
     "abort": {
       "already_configured": "This account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "LG Horizon - Settings",
+        "description": "Change the settings for your LG Horizon integration.",
+        "data": {
+          "channel_sort": "Channel sort order"
+        }
+      }
     }
   },
   "selector": {

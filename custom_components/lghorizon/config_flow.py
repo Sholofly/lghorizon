@@ -1,4 +1,4 @@
-"""Config flow for arrisdcx960 integration."""
+"""Config flow for LGHorizon integration."""
 
 from __future__ import annotations
 
@@ -8,9 +8,10 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.exceptions import HomeAssistantError, ConfigEntryAuthFailed
+from homeassistant.exceptions import HomeAssistantError
+from .options_flow import OptionsFlowHandler
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 from homeassistant.helpers.selector import (
     SelectSelectorMode,
@@ -37,7 +38,7 @@ from .const import (
     COUNTRY_CODES,
     CONF_IDENTIFIER,
     CONF_PROFILE_ID,
-    CONF_CHANNEL_SORT
+    CONF_CHANNEL_SORT,
 )
 
 
@@ -174,7 +175,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     SelectSelectorConfig(
                         options=sort_selectors,
                         translation_key="channel_sort",
-                        mode=SelectSelectorMode.DROPDOWN
+                        mode=SelectSelectorMode.DROPDOWN,
                     ),
                 ),
             }
@@ -215,3 +216,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         except Exception as ex:
             _LOGGER.error(ex)
             raise CannotConnect from ex
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> OptionsFlowHandler:
+        """Create the options flow."""
+        return OptionsFlowHandler()

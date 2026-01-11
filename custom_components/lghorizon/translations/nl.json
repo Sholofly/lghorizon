@@ -23,9 +23,9 @@
         "title": "LG Horizon - Selecteer profiel",
         "description": "Selecteer het profiel waarvan je de favoriete kanalen wilt tonen",
         "data": {
-          "profile_id": "Profiel",          
-          "channel_sort": "Kanaalvolgorde",       
-          "channel_sort_alpha": "Alfabetisch",          
+          "profile_id": "Profiel",
+          "channel_sort": "Kanaalvolgorde",
+          "channel_sort_alpha": "Alfabetisch",
           "channel_sort_number": "Kanaalnummer"
         }
       }
@@ -38,6 +38,17 @@
     },
     "abort": {
       "already_configured": "Dit account is reeds toegevoegd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "LG Horizon - Instellingen",
+        "description": "Wijzig de instellingen voor je LG Horizon integratie.",
+        "data": {
+          "channel_sort": "Kanaalvolgorde"
+        }
+      }
     }
   },
   "selector": {
