@@ -54,7 +54,7 @@
   "selector": {
     "channel_sort": {
       "options": {
-        "alpha": "Alfabetical",
+        "alpha": "Alphabetical",
         "number": "Channel number"
       }
     }
