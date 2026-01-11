@@ -37,6 +37,7 @@ from .const import (
     COUNTRY_CODES,
     CONF_IDENTIFIER,
     CONF_PROFILE_ID,
+    CONF_CHANNEL_SORT
 )
 
 
@@ -157,11 +158,23 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             for profile in self.customer.profiles.values()
         ]
 
+        sort_selectors = [
+            "number",
+            "alpha",
+        ]
+
         profile_schema = vol.Schema(
             {
                 vol.Required(CONF_PROFILE_ID): SelectSelector(
                     SelectSelectorConfig(
                         options=profile_selectors, mode=SelectSelectorMode.DROPDOWN
+                    ),
+                ),
+                vol.Required(CONF_CHANNEL_SORT, default="number"): SelectSelector(
+                    SelectSelectorConfig(
+                        options=sort_selectors,
+                        translation_key="channel_sort",
+                        mode=SelectSelectorMode.DROPDOWN
                     ),
                 ),
             }
