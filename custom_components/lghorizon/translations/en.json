@@ -25,8 +25,7 @@
         "data": {
           "profile_id": "Profile",
           "channel_sort": "Channel sort order",
-          "channel_sort_alpha": "Alphabetical",
-          "channel_sort_number": "Channel number"
+          "excluded_channels": "Excluded channels"
         }
       }
     },

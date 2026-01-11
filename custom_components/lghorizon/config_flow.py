@@ -39,6 +39,7 @@ from .const import (
     CONF_IDENTIFIER,
     CONF_PROFILE_ID,
     CONF_CHANNEL_SORT,
+    CONF_EXCLUDED_CHANNELS,
 )
 
 
@@ -64,6 +65,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     CONFIG_DATA: dict[str, Any] = None
 
     customer: LGHorizonCustomer = None
+    channels = []
 
     async def async_step_user(
         self,
@@ -164,6 +166,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "alpha",
         ]
 
+        channel_selectors = [
+            SelectOptionDict(value=str(channel.channel_number), label=channel.title)
+            for channel in self.channels
+        ]
+
         profile_schema = vol.Schema(
             {
                 vol.Required(CONF_PROFILE_ID): SelectSelector(
@@ -176,6 +183,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         options=sort_selectors,
                         translation_key="channel_sort",
                         mode=SelectSelectorMode.DROPDOWN,
+                    ),
+                ),
+                vol.Required(CONF_EXCLUDED_CHANNELS, default=[]): SelectSelector(
+                    SelectSelectorConfig(
+                        options=channel_selectors,
+                        translation_key="excluded_channels",
+                        mode=SelectSelectorMode.DROPDOWN,
+                        multiple=True,
                     ),
                 ),
             }
@@ -206,6 +221,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await hass.async_add_executor_job(api.connect)
             # store customer for profile extraction
             self.customer = api.customer
+            self.channels = api.get_display_channels()
             await hass.async_add_executor_job(api.disconnect)
         except LGHorizonApiUnauthorizedError as lgau_err:
             raise InvalidAuth from lgau_err
