@@ -24,7 +24,9 @@
         "description": "Selecteer het profiel waarvan je de favoriete kanalen wilt tonen",
         "data": {
           "profile_id": "Profiel",          
-          "channel_sort": "Kanaalvolgorde"
+          "channel_sort": "Kanaalvolgorde",       
+          "channel_sort_alpha": "Alfabetisch",          
+          "channel_sort_number": "Kanaalnummer"
         }
       }
     },
@@ -36,6 +38,14 @@
     },
     "abort": {
       "already_configured": "Dit account is reeds toegevoegd."
+    }
+  },
+  "selector": {
+    "channel_sort": {
+      "options": {
+        "alpha": "Alfabetisch",
+        "number": "Kanaalnummer"
+      }
     }
   },
   "services": {
