@@ -1,15 +1,11 @@
 {
   "domain": "lghorizon",
   "name": "LG Horizon",
-  "codeowners": [
-    "@Sholofly"
-  ],
+  "codeowners": ["@Sholofly"],
   "config_flow": true,
   "documentation": "https://github.com/Sholofly/lghorizon",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sholofly/lghorizon/issues",
-  "requirements": [
-    "lghorizon>=0.8.6"
-  ],
+  "requirements": ["lghorizon>=0.8.7"],
   "version": "0.8.2"
 }
