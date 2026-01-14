@@ -2,5 +2,5 @@
     "name": "LG Horizon",
     "country": ["NL", "BE", "CH", "GB", "AT"],
     "render_readme": true,
-    "homeassistant": "2021.5.0"
+    "homeassistant": "2025.8.0"
 }
