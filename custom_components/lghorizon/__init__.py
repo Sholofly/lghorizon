@@ -2,28 +2,16 @@
 
 from __future__ import annotations
 
-import logging
-
-import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
+import homeassistant.helpers.config_validation as cv
 from lghorizon import LGHorizonApi, LGHorizonAuth
 
-from .const import (
-    API,
-    CONF_COUNTRY_CODE,
-    CONF_IDENTIFIER,
-    CONF_PROFILE_ID,
-    CONF_REFRESH_TOKEN,
-    COUNTRY_CODES,
-    DOMAIN,
-)
-
-_LOGGER = logging.getLogger(__name__)
+from .const import API, CONF_COUNTRY_CODE, CONF_PROFILE_ID, CONF_REFRESH_TOKEN, DOMAIN
 
 PLATFORMS = ["media_player", "sensor"]
 CONFIG_SCHEMA = vol.Schema(
@@ -33,7 +21,6 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_COUNTRY_CODE, default="nl"): cv.string,
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(CONF_IDENTIFIER): cv.string,
                 vol.Optional(CONF_REFRESH_TOKEN): cv.string,
             }
         )

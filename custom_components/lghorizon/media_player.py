@@ -249,7 +249,9 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def media_episode(self) -> str | None:
         """Return the media type."""
-        return str(self._device.device_state.episode_number).zfill(2)
+        if self._device.device_state.episode_number:
+            return str(self._device.device_state.episode_number).zfill(2)
+        return None
 
     @property
     def media_image_remotely_accessible(self):
@@ -296,9 +298,11 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         return None
 
     @property
-    def media_season(self):
+    def media_season(self) -> str | None:
         """Return the media title."""
-        return str(self._device.device_state.season_number).zfill(2)
+        if self._device.device_state.season_number:
+            return str(self._device.device_state.season_number).zfill(2)
+        return None
 
     @property
     def media_series_title(self):

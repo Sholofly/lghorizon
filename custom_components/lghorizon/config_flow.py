@@ -40,7 +40,6 @@ from .const import (
     CONF_COUNTRY_CODE,
     CONF_REFRESH_TOKEN,
     COUNTRY_CODES,
-    CONF_IDENTIFIER,
     CONF_PROFILE_ID,
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
@@ -106,7 +105,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_USERNAME: None,
             CONF_PASSWORD: None,
             CONF_COUNTRY_CODE: None,
-            CONF_IDENTIFIER: None,
             CONF_PROFILE_ID: None,
             CONF_REFRESH_TOKEN: None,
         }
@@ -132,13 +130,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             cred_schema = cred_schema.extend(
                 {
                     vol.Optional(CONF_REFRESH_TOKEN): cv.string,
-                }
-            )
-
-        if country_code == "be":
-            cred_schema = cred_schema.extend(
-                {
-                    vol.Optional(CONF_IDENTIFIER): cv.string,
                 }
             )
 
