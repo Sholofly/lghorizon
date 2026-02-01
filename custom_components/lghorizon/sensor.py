@@ -21,7 +21,7 @@ async def async_setup_entry(
     """Setup platform."""
     sensors = []
 
-    country = COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]][0:2]
+    country = entry.data[CONF_COUNTRY_CODE][0:2]
     if country == "gb":
         return
 

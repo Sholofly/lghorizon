@@ -15,7 +15,6 @@
         "description": "Enter the authentication data for your Ziggo, Telenet, UPC/Sunrise, Magenta or Virgin account.",
         "data": {
           "password": "Password",
-          "identifier": "DTV identifier",
           "refresh_token": "Refresh token"
         }
       },

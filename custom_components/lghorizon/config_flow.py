@@ -79,11 +79,20 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Handle the initial step."""
 
+        country_selectors = [
+            SelectOptionDict(
+                value=COUNTRY_CODES[country_code_key], label=country_code_key
+            )
+            for country_code_key in COUNTRY_CODES
+        ]
+
         user_schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_COUNTRY_CODE, default=list(COUNTRY_CODES.keys())[0]
-                ): vol.In(list(COUNTRY_CODES.keys())),
+                vol.Required(CONF_COUNTRY_CODE): SelectSelector(
+                    SelectSelectorConfig(
+                        options=country_selectors, mode=SelectSelectorMode.DROPDOWN
+                    ),
+                ),
                 vol.Required(CONF_USERNAME): cv.string,
             }
         )
@@ -115,7 +124,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         cred_schema: vol.Schema = vol.Schema({})
 
-        country_code = COUNTRY_CODES[self.CONFIG_DATA[CONF_COUNTRY_CODE]][0:2]
+        country_code = self.CONFIG_DATA[CONF_COUNTRY_CODE][0:2]
 
         if country_code not in ("gb", "ch", "be"):
             cred_schema = cred_schema.extend({vol.Required(CONF_PASSWORD): cv.string})
@@ -163,7 +172,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Select profile step."""
         profile_selectors = [
             SelectOptionDict(value=profile.id, label=profile.name)
-            for profile in self._profiles.values
+            for profile in self._profiles.values()
         ]
 
         sort_selectors = [
@@ -173,7 +182,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         channel_selectors = [
             SelectOptionDict(value=str(channel.channel_number), label=channel.title)
-            for channel in self.channels
+            for channel in self._channels.values()
         ]
 
         profile_schema = vol.Schema(
@@ -228,7 +237,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             profile_id = self.CONFIG_DATA[CONF_PROFILE_ID]
             self._profiles = await api.get_profiles()
             self._channels = await api.get_profile_channels(profile_id)
-            await hass.async_add_executor_job(api.disconnect)
+            await api.disconnect()
         except LGHorizonApiUnauthorizedError as lgau_err:
             raise InvalidAuth from lgau_err
         except LGHorizonApiConnectionError as lgac_err:

@@ -58,43 +58,29 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 
 ### Parameters
 
-| Parameter     | Required              | Description                         |
-| ------------- | --------------------- | ----------------------------------- |
-| Username      | yes                   | Your provider username              |
-| Password      | yes                   | Your provider password              |
-| Provider      | yes (default 'Ziggo') | Your Provider                       |
-| DTV Identifier    | no (only for Telenet) | Your account identifier (see below) |
-| Refresh Token | no (only for BE, GB & CH) | A JWT Token (see below)             |
+| Parameter     | Required   | Description             |
+| ------------- | ---------- | ----------------------- |
+| Username      | yes        | Your provider username  |
+| Password      | yes        | Your provider password  |
+| Provider      | yes        | Your Provider           |
+| Refresh Token | not for NL | A JWT Token (see below) |
 
-## Configuration Telenet multiple accounts
-
-When you can't connect to your Telenet account it's possible that you have multiple accounts and you have to provide your account identifier.
-You can find your identifier by opening your browser in incognito mode and login to your telenet TV environment.
-After entering your credentials an account selection screen will popup:
-![account selection](/images/Telenet%20DTV.png)
-
-- Find the account with the option 'Digital Base Telenet TV2'
-- Right click the radio button before that account and click inspect element
-- In the source code find the value of the box. Usually starts with DTV
-  ![Identifier code](/images/Telenet%20code.png)
-- Use that code in the config of your telenet account in HA
-
-## Configuration for Virgin(GB), Sunrise (CH), Telenet (BE) and BASE (be)
+## Fetching your refresh token
 
 For the Telenet BE, Virgin GB and the Sunrise CH integration the Password is not used, instead, you need your refresh token.
 To get the refresh token you need to open the developer toolbar in your chromium based browser.
 
 1. Login to your Virgin box using any Chromium based (i.e. Chrome, Edge) as your web browser:
-   
+
    GB: [https://virgintvgo.virginmedia.com/](https://virgintvgo.virginmedia.com/)
    CH: [https://www.sunrisetv.ch/](https://www.sunrisetv.ch/)
    BE: [Telenet TV-Box](https://www.telenet.tv/nl/home)
-   
-4. Open the 'application' tab in your developer toolbar (open the toolbar with F12)
 
-5. In the left panel navigate to 'local storage' and click on the first line that has the same URL as your page URL starts with
-   
-7. On the right side copy the value under: flutter._WEB_SECURE_STORAGE_refreshToken
+2. Open the 'application' tab in your developer toolbar (open the toolbar with F12)
+
+3. In the left panel navigate to 'local storage' and click on the first line that has the same URL as your page URL starts with
+
+4. On the right side copy the value under: flutter.\_WEB_SECURE_STORAGE_refreshToken
 
 ## Service to change channel
 

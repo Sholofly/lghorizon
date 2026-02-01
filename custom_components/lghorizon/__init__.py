@@ -44,9 +44,6 @@ CONFIG_SCHEMA = vol.Schema(
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up lghorizon api from a config entry."""
-    telenet_identifier = None
-    if CONF_IDENTIFIER in entry.data:
-        telenet_identifier = entry.data[CONF_IDENTIFIER]
 
     refresh_token = None
     if CONF_REFRESH_TOKEN in entry.data:
@@ -60,7 +57,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     auth = LGHorizonAuth(
         websession,
-        COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]],
+        entry.data[CONF_COUNTRY_CODE],
         refresh_token=refresh_token,
         username=entry.data[CONF_USERNAME],
         password=entry.data[CONF_PASSWORD],
