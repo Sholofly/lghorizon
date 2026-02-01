@@ -2,23 +2,26 @@
 
 from __future__ import annotations
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
+import logging
+
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-import logging
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+from lghorizon import LGHorizonApi, LGHorizonAuth
+
 from .const import (
-    DOMAIN,
-    CONF_COUNTRY_CODE,
-    CONF_REFRESH_TOKEN,
     API,
-    COUNTRY_CODES,
+    CONF_COUNTRY_CODE,
     CONF_IDENTIFIER,
     CONF_PROFILE_ID,
+    CONF_REFRESH_TOKEN,
+    COUNTRY_CODES,
+    DOMAIN,
 )
-
-from lghorizon import LGHorizonApi
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,15 +56,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if CONF_PROFILE_ID in entry.data:
         profile_id = entry.data[CONF_PROFILE_ID]
 
-    api = LGHorizonApi(
-        entry.data[CONF_USERNAME],
-        entry.data[CONF_PASSWORD],
+    websession = async_get_clientsession(hass)
+
+    auth = LGHorizonAuth(
+        websession,
         COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]],
-        telenet_identifier,
-        refresh_token,
-        profile_id=profile_id,
+        refresh_token=refresh_token,
+        username=entry.data[CONF_USERNAME],
+        password=entry.data[CONF_PASSWORD],
     )
-    await hass.async_add_executor_job(api.connect)
+    api = LGHorizonApi(auth, profile_id)
+    await api.initialize()
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         API: api,
@@ -70,9 +75,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     if CONF_REFRESH_TOKEN in entry.data:
-        _LOGGER.info("New JWT stored: %s", api.refresh_token)
         new_data = {**entry.data}
-        new_data[CONF_REFRESH_TOKEN] = api.refresh_token
+        new_data[CONF_REFRESH_TOKEN] = api.auth.refresh_token
         hass.config_entries.async_update_entry(entry, data=new_data)
 
     return True

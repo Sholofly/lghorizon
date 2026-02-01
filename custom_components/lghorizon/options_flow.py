@@ -3,6 +3,7 @@
 from typing import Any
 
 import voluptuous as vol
+
 from homeassistant.config_entries import OptionsFlowWithReload
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
@@ -11,9 +12,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .const import (
-    CONF_CHANNEL_SORT,
-)
+from .const import CONF_CHANNEL_SORT
 
 OPTIONS_SCHEMA = vol.Schema(
     {

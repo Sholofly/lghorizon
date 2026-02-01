@@ -20,16 +20,20 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
 )
 
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
 import homeassistant.helpers.config_validation as cv
 
 
 from lghorizon import (
-    LGHorizonApi,
     LGHorizonApiUnauthorizedError,
     LGHorizonApiConnectionError,
     LGHorizonApiLockedError,
     LGHorizonCustomer,
+    LGHorizonApi,
+    LGHorizonAuth,
 )
+
 
 from .const import (
     DOMAIN,
@@ -65,7 +69,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     CONFIG_DATA: dict[str, Any] = None
 
     customer: LGHorizonCustomer = None
-    channels = []
+    _channels = []
+    _profiles = []
 
     async def async_step_user(
         self,
@@ -157,8 +162,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Select profile step."""
         profile_selectors = [
-            SelectOptionDict(value=profile.profile_id, label=profile.name)
-            for profile in self.customer.profiles.values()
+            SelectOptionDict(value=profile.id, label=profile.name)
+            for profile in self._profiles.values
         ]
 
         sort_selectors = [
@@ -209,19 +214,20 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def validate_config(self, hass: HomeAssistant):
         """Validate the user input allows us to connect."""
-
+        client_session = async_get_clientsession(hass)
         try:
-            api = LGHorizonApi(
+            auth = LGHorizonAuth(
+                client_session,
+                self.CONFIG_DATA[CONF_COUNTRY_CODE],
+                self.CONFIG_DATA[CONF_REFRESH_TOKEN],
                 self.CONFIG_DATA[CONF_USERNAME],
                 self.CONFIG_DATA[CONF_PASSWORD],
-                COUNTRY_CODES[self.CONFIG_DATA[CONF_COUNTRY_CODE]],
-                self.CONFIG_DATA[CONF_IDENTIFIER],
-                self.CONFIG_DATA[CONF_REFRESH_TOKEN],
             )
-            await hass.async_add_executor_job(api.connect)
-            # store customer for profile extraction
-            self.customer = api.customer
-            self.channels = api.get_display_channels()
+            api = LGHorizonApi(auth, self.CONFIG_DATA[CONF_PROFILE_ID])
+            await api.initialize()
+            profile_id = self.CONFIG_DATA[CONF_PROFILE_ID]
+            self._profiles = await api.get_profiles()
+            self._channels = await api.get_profile_channels(profile_id)
             await hass.async_add_executor_job(api.disconnect)
         except LGHorizonApiUnauthorizedError as lgau_err:
             raise InvalidAuth from lgau_err
