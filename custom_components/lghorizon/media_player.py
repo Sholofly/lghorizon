@@ -7,6 +7,7 @@ import logging
 import random
 from typing import cast
 
+
 import voluptuous as vol
 
 from homeassistant.components.media_player import (
@@ -44,11 +45,14 @@ from .const import (
     CONF_EXCLUDED_CHANNELS,
     CONF_REFRESH_TOKEN,
     CONF_REMOTE_KEY,
+    CONF_MESSAGE,
     DOMAIN,
     FAST_FORWARD,
     RECORD,
     REMOTE_KEY_PRESS,
+    SEND_MESSAGE,
     REWIND,
+    CONF_INTERRUPT_APP,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,6 +84,18 @@ async def async_setup_entry(
             await device.fast_forward()
         elif call.service == RECORD:
             await device.record()
+        elif call.service == SEND_MESSAGE:
+            if device.device_state.state != LGHorizonRunningState.ONLINE_RUNNING:
+                return
+            interrupt_app = call.data[CONF_INTERRUPT_APP]
+            if (
+                device.device_state.ui_state_type == LGHorizonUIStateType.APPS
+                and not interrupt_app
+            ):
+                return
+
+            message = call.data[CONF_MESSAGE]
+            await device.display_message(device.device_state.source_type.value, message)
         elif call.service == REMOTE_KEY_PRESS:
             key = call.data[CONF_REMOTE_KEY]
             await device.send_key_to_box(key)
@@ -105,6 +121,18 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         REMOTE_KEY_PRESS,
         key_schema,
+        handle_default_services,
+    )
+
+    message_schema = cv.make_entity_service_schema(
+        {
+            vol.Required(CONF_MESSAGE): cv.string,
+            vol.Optional(CONF_INTERRUPT_APP, default=False): cv.boolean,
+        }
+    )
+    platform.async_register_entity_service(
+        SEND_MESSAGE,
+        message_schema,
         handle_default_services,
     )
 
@@ -160,31 +188,29 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def supported_features(self):
         """Return the supported features."""
-        if self._device.device_state.ui_state_type == LGHorizonUIStateType.APPS:
-            return (
-                MediaPlayerEntityFeature.PLAY
-                | MediaPlayerEntityFeature.PAUSE
-                | MediaPlayerEntityFeature.STOP
-                | MediaPlayerEntityFeature.TURN_ON
-                | MediaPlayerEntityFeature.TURN_OFF
-                | MediaPlayerEntityFeature.SELECT_SOURCE
-                | MediaPlayerEntityFeature.PLAY_MEDIA
-                | MediaPlayerEntityFeature.BROWSE_MEDIA
-                # | SUPPORT_SEEK
+
+        common_features = [
+            MediaPlayerEntityFeature.PLAY,
+            MediaPlayerEntityFeature.PAUSE,
+            MediaPlayerEntityFeature.STOP,
+            MediaPlayerEntityFeature.TURN_ON,
+            MediaPlayerEntityFeature.TURN_OFF,
+            MediaPlayerEntityFeature.SELECT_SOURCE,
+            MediaPlayerEntityFeature.PLAY_MEDIA,
+            MediaPlayerEntityFeature.BROWSE_MEDIA,
+        ]
+        if self._device.device_state.ui_state_type != LGHorizonUIStateType.APPS:
+            common_features.extend(
+                [
+                    MediaPlayerEntityFeature.NEXT_TRACK,
+                    MediaPlayerEntityFeature.PREVIOUS_TRACK,
+                    MediaPlayerEntityFeature.SEEK,
+                ]
             )
-        return (
-            MediaPlayerEntityFeature.PLAY
-            | MediaPlayerEntityFeature.PAUSE
-            | MediaPlayerEntityFeature.STOP
-            | MediaPlayerEntityFeature.TURN_ON
-            | MediaPlayerEntityFeature.TURN_OFF
-            | MediaPlayerEntityFeature.SELECT_SOURCE
-            | MediaPlayerEntityFeature.NEXT_TRACK
-            | MediaPlayerEntityFeature.PREVIOUS_TRACK
-            | MediaPlayerEntityFeature.PLAY_MEDIA
-            | MediaPlayerEntityFeature.BROWSE_MEDIA
-            # | SUPPORT_SEEK
-        )
+        combined = MediaPlayerEntityFeature(0)
+        for f in common_features:
+            combined |= f
+        return combined
 
     @property
     def extra_state_attributes(self):
@@ -218,7 +244,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             self._device.device_state.ui_state_type
             and self._device.device_state.ui_state_type == LGHorizonUIStateType.APPS
         ):
-            return self._device.device_state.title
+            return self._device.device_state.show_title
         return None
 
     @property
@@ -229,7 +255,9 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def media_channel(self) -> str | None:
         """Return the unique id."""
-        return "Channel Rudolf"  # self._device.device_state.channel_name
+        return (
+            self._device.device_state.channel_name
+        )  # self._device.device_state.channel_name
 
     @property
     def media_content_id(self) -> str | None:
@@ -244,7 +272,9 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def media_duration(self) -> int | None:
         """Duration of current playing media in seconds."""
-        return self._device.device_state.duration
+        if not self._device.device_state.duration:
+            return 0
+        return round(self._device.device_state.duration)
 
     @property
     def media_episode(self) -> str | None:
@@ -288,14 +318,16 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def media_position(self) -> int | None:
         """Position of current playing media in seconds."""
-        return self._device.device_state.position
+        if not self._device.device_state.position:
+            return None
+        return round(self._device.device_state.position / 1000)
 
     @property
     def media_position_updated_at(self) -> dt.datetime | None:
         """When was the position of the current playing media valid."""
-        if self._device:
-            return dt_util.utcnow()
-        return None
+        return dt_util.utc_from_timestamp(
+            int(self._device.device_state.last_position_update or 0) / 1000
+        )
 
     @property
     def media_season(self) -> str | None:
@@ -395,6 +427,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     async def async_media_previous_track(self):
         """Send previous track command."""
         await self._device.previous_channel()
+
+    async def async_media_seek(self, position: float) -> None:
+        """Send seek command."""
+        await self._device.set_player_position(int(position * 1000))
 
     async def async_play_media(self, media_type, media_id, **kwargs):
         """Support changing a channel."""

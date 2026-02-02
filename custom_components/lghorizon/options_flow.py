@@ -5,25 +5,23 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.config_entries import OptionsFlowWithReload
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    SelectOptionDict,
 )
+from lghorizon import LGHorizonApi, LGHorizonAuth
 
-from .const import CONF_CHANNEL_SORT
-
-OPTIONS_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_CHANNEL_SORT, default="number"): SelectSelector(
-            SelectSelectorConfig(
-                options=["number", "alpha"],
-                translation_key="channel_sort",
-                mode=SelectSelectorMode.DROPDOWN,
-            ),
-        ),
-    }
+from .const import (
+    CONF_CHANNEL_SORT,
+    CONF_COUNTRY_CODE,
+    CONF_EXCLUDED_CHANNELS,
+    CONF_PROFILE_ID,
+    CONF_REFRESH_TOKEN,
 )
 
 
@@ -34,6 +32,46 @@ class OptionsFlowHandler(OptionsFlowWithReload):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage the options."""
+
+        client_session = async_get_clientsession(self.hass)
+        auth = LGHorizonAuth(
+            client_session,
+            self.config_entry.data[CONF_COUNTRY_CODE],
+            self.config_entry.data[CONF_REFRESH_TOKEN],
+            self.config_entry.data[CONF_USERNAME],
+            self.config_entry.data[CONF_PASSWORD],
+        )
+        api: LGHorizonApi = LGHorizonApi(auth, self.config_entry.data[CONF_PROFILE_ID])
+        await api.initialize()
+        profile_id = self.config_entry.data[CONF_PROFILE_ID]
+        channels = await api.get_profile_channels(profile_id)
+        await api.disconnect()
+
+        channel_selectors = [
+            SelectOptionDict(value=str(channel.channel_number), label=channel.title)
+            for channel in channels.values()
+        ]
+
+        OPTIONS_SCHEMA = vol.Schema(
+            {
+                vol.Required(CONF_CHANNEL_SORT, default="number"): SelectSelector(
+                    SelectSelectorConfig(
+                        options=["number", "alpha"],
+                        translation_key="channel_sort",
+                        mode=SelectSelectorMode.DROPDOWN,
+                    ),
+                ),
+                vol.Required(CONF_EXCLUDED_CHANNELS, default=[]): SelectSelector(
+                    SelectSelectorConfig(
+                        options=channel_selectors,
+                        translation_key="excluded_channels",
+                        mode=SelectSelectorMode.DROPDOWN,
+                        multiple=True,
+                    ),
+                ),
+            }
+        )
+
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
