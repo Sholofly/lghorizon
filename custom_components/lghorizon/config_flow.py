@@ -32,6 +32,7 @@ from lghorizon import (
     LGHorizonCustomer,
     LGHorizonApi,
     LGHorizonAuth,
+    COUNTRY_SETTINGS,
 )
 
 
@@ -39,7 +40,6 @@ from .const import (
     DOMAIN,
     CONF_COUNTRY_CODE,
     CONF_REFRESH_TOKEN,
-    COUNTRY_CODES,
     CONF_PROFILE_ID,
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
@@ -80,9 +80,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         country_selectors = [
             SelectOptionDict(
-                value=COUNTRY_CODES[country_code_key], label=country_code_key
+                value=country_code_key,
+                label=COUNTRY_SETTINGS[country_code_key]["name"],
             )
-            for country_code_key in COUNTRY_CODES
+            for country_code_key in COUNTRY_SETTINGS
         ]
 
         user_schema = vol.Schema(
@@ -122,16 +123,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         cred_schema: vol.Schema = vol.Schema({})
 
-        country_code = self.CONFIG_DATA[CONF_COUNTRY_CODE][0:2]
-
-        if country_code not in ("gb", "ch", "be"):
-            cred_schema = cred_schema.extend({vol.Required(CONF_PASSWORD): cv.string})
-        else:
+        if COUNTRY_SETTINGS[self.CONFIG_DATA[CONF_COUNTRY_CODE]].get(
+            "use_refreshtoken", True
+        ):
             cred_schema = cred_schema.extend(
                 {
                     vol.Optional(CONF_REFRESH_TOKEN): cv.string,
                 }
             )
+        else:
+            cred_schema = cred_schema.extend({vol.Required(CONF_PASSWORD): cv.string})
 
         if user_input is None:
             return self.async_show_form(step_id="credentials", data_schema=cred_schema)

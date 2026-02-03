@@ -5,7 +5,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_USERNAME
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.core import HomeAssistant
-from .const import API, CONF_COUNTRY_CODE, COUNTRY_CODES, DOMAIN
+from .const import API, CONF_COUNTRY_CODE, DOMAIN
 from datetime import timedelta
 import logging
 

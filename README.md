@@ -5,8 +5,6 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 <br><a href="https://www.buymeacoffee.com/sholofly" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-black.png" width="150px" height="35px" alt="Buy Me A Coffee" style="height: 35px !important;width: 150px !important;" ></a>
 
-## WARNING: This component replaces the Arris DCX960 component and is in beta status
-
 ## Description
 
 A media player component for Home Assistant that controls each LG Horizon Settopbox in your account. After configuration you should see:
