@@ -15,7 +15,6 @@
         "description": "Vul de authenticatiegegevens van je Ziggo, Telenet, UPC/Sunrise, Magenta of Virgin account in.",
         "data": {
           "password": "Wachtwoord",
-          "identifier": "DTV identifier",
           "refresh_token": "Refreshtoken"
         }
       },
@@ -45,7 +44,8 @@
         "title": "LG Horizon - Instellingen",
         "description": "Wijzig de instellingen voor je LG Horizon integratie.",
         "data": {
-          "channel_sort": "Kanaalvolgorde"
+          "channel_sort": "Kanaalvolgorde",
+          "excluded_channels": "Uitgesloten kanalen"
         }
       }
     }
@@ -100,6 +100,24 @@
         "remote_key": {
           "name": "Knop afstandsbediening",
           "description": "De te versturen knop."
+        }
+      }
+    },
+    "send_message": {
+      "name": "Stuur een bericht naar de box",
+      "description": "Stuur een bericht naar de box",
+      "fields": {
+        "entity_id": {
+          "name": "Entity Id",
+          "description": "Entiteit ID van je mediabox."
+        },
+        "message": {
+          "name": "Bericht",
+          "description": "Bericht van max. 70 tekens"
+        },
+        "interrupt_app": {
+          "name": "Bericht tijdens app‑weergave toestaan?",
+          "description": "Mag er een bericht worden afgespeeld terwijl een app actief is? Let op: dit sluit de app af."
         }
       }
     }

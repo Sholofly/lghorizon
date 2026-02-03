@@ -20,23 +20,26 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
 )
 
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
 import homeassistant.helpers.config_validation as cv
 
 
 from lghorizon import (
-    LGHorizonApi,
     LGHorizonApiUnauthorizedError,
     LGHorizonApiConnectionError,
     LGHorizonApiLockedError,
     LGHorizonCustomer,
+    LGHorizonApi,
+    LGHorizonAuth,
+    COUNTRY_SETTINGS,
 )
+
 
 from .const import (
     DOMAIN,
     CONF_COUNTRY_CODE,
     CONF_REFRESH_TOKEN,
-    COUNTRY_CODES,
-    CONF_IDENTIFIER,
     CONF_PROFILE_ID,
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
@@ -65,7 +68,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     CONFIG_DATA: dict[str, Any] = None
 
     customer: LGHorizonCustomer = None
-    channels = []
+    _channels = []
+    _profiles = []
 
     async def async_step_user(
         self,
@@ -74,11 +78,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Handle the initial step."""
 
+        country_selectors = [
+            SelectOptionDict(
+                value=country_code_key,
+                label=COUNTRY_SETTINGS[country_code_key]["name"],
+            )
+            for country_code_key in COUNTRY_SETTINGS
+        ]
+
         user_schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_COUNTRY_CODE, default=list(COUNTRY_CODES.keys())[0]
-                ): vol.In(list(COUNTRY_CODES.keys())),
+                vol.Required(CONF_COUNTRY_CODE): SelectSelector(
+                    SelectSelectorConfig(
+                        options=country_selectors, mode=SelectSelectorMode.DROPDOWN
+                    ),
+                ),
                 vol.Required(CONF_USERNAME): cv.string,
             }
         )
@@ -92,7 +106,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_USERNAME: None,
             CONF_PASSWORD: None,
             CONF_COUNTRY_CODE: None,
-            CONF_IDENTIFIER: None,
             CONF_PROFILE_ID: None,
             CONF_REFRESH_TOKEN: None,
         }
@@ -110,23 +123,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         cred_schema: vol.Schema = vol.Schema({})
 
-        country_code = COUNTRY_CODES[self.CONFIG_DATA[CONF_COUNTRY_CODE]][0:2]
-
-        if country_code not in ("gb", "ch", "be"):
-            cred_schema = cred_schema.extend({vol.Required(CONF_PASSWORD): cv.string})
-        else:
+        if COUNTRY_SETTINGS[self.CONFIG_DATA[CONF_COUNTRY_CODE]].get(
+            "use_refreshtoken", True
+        ):
             cred_schema = cred_schema.extend(
                 {
                     vol.Optional(CONF_REFRESH_TOKEN): cv.string,
                 }
             )
-
-        if country_code == "be":
-            cred_schema = cred_schema.extend(
-                {
-                    vol.Optional(CONF_IDENTIFIER): cv.string,
-                }
-            )
+        else:
+            cred_schema = cred_schema.extend({vol.Required(CONF_PASSWORD): cv.string})
 
         if user_input is None:
             return self.async_show_form(step_id="credentials", data_schema=cred_schema)
@@ -157,8 +163,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Select profile step."""
         profile_selectors = [
-            SelectOptionDict(value=profile.profile_id, label=profile.name)
-            for profile in self.customer.profiles.values()
+            SelectOptionDict(value=profile.id, label=profile.name)
+            for profile in self._profiles.values()
         ]
 
         sort_selectors = [
@@ -168,7 +174,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         channel_selectors = [
             SelectOptionDict(value=str(channel.channel_number), label=channel.title)
-            for channel in self.channels
+            for channel in self._channels.values()
         ]
 
         profile_schema = vol.Schema(
@@ -209,20 +215,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def validate_config(self, hass: HomeAssistant):
         """Validate the user input allows us to connect."""
-
+        client_session = async_get_clientsession(hass)
         try:
-            api = LGHorizonApi(
+            auth = LGHorizonAuth(
+                client_session,
+                self.CONFIG_DATA[CONF_COUNTRY_CODE],
+                self.CONFIG_DATA[CONF_REFRESH_TOKEN],
                 self.CONFIG_DATA[CONF_USERNAME],
                 self.CONFIG_DATA[CONF_PASSWORD],
-                COUNTRY_CODES[self.CONFIG_DATA[CONF_COUNTRY_CODE]],
-                self.CONFIG_DATA[CONF_IDENTIFIER],
-                self.CONFIG_DATA[CONF_REFRESH_TOKEN],
             )
-            await hass.async_add_executor_job(api.connect)
-            # store customer for profile extraction
-            self.customer = api.customer
-            self.channels = api.get_display_channels()
-            await hass.async_add_executor_job(api.disconnect)
+            api = LGHorizonApi(auth, self.CONFIG_DATA[CONF_PROFILE_ID])
+            await api.initialize()
+            profile_id = self.CONFIG_DATA[CONF_PROFILE_ID]
+            self._profiles = await api.get_profiles()
+            self._channels = await api.get_profile_channels(profile_id)
+            await api.disconnect()
         except LGHorizonApiUnauthorizedError as lgau_err:
             raise InvalidAuth from lgau_err
         except LGHorizonApiConnectionError as lgac_err:

@@ -5,36 +5,30 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_USERNAME
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.core import HomeAssistant
-from .const import (
-    API,
-    CONF_COUNTRY_CODE,
-    COUNTRY_CODES,
-    DOMAIN
-)
+from .const import API, CONF_COUNTRY_CODE, DOMAIN
 from datetime import timedelta
 import logging
 
 SCAN_INTERVAL = timedelta(hours=1)
 _LOGGER = logging.getLogger(__name__)
 
-from lghorizon import LGHorizonApi
+from lghorizon import LGHorizonApi, LGHorizonRecordingQuota  # noqa: E402
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Setup platform"""
+    """Setup platform."""
     sensors = []
-    
-    country = COUNTRY_CODES[entry.data[CONF_COUNTRY_CODE]][0:2]
+
+    country = entry.data[CONF_COUNTRY_CODE][0:2]
     if country == "gb":
-         _LOGGER.debug("Recording capacity feature not available in GB. No sensor added.")
-         return
+        return
 
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
-    capacity = await hass.async_add_executor_job(api.get_recording_capacity)
+    capacity = await api.get_recording_quota()
     if not capacity:
-        _LOGGER.info("No recording capacity available. No sensor added.")
+        _LOGGER.debug("No recording capacity available. No sensor added")
         return
 
     username = hass.data[DOMAIN][entry.entry_id][CONF_USERNAME]
@@ -47,6 +41,7 @@ class LGHorizonSensor(SensorEntity):
 
     username: str
     hass: HomeAssistant
+    _quota: LGHorizonRecordingQuota | None = None
 
     @property
     def unique_id(self):
@@ -55,22 +50,29 @@ class LGHorizonSensor(SensorEntity):
 
     @property
     def name(self):
+        """Return the name."""
         return f"{self.username} Recording capacity"
 
     @property
     def icon(self):
+        """Return the icon."""
         return "mdi:percent-outline"
 
     @property
     def native_unit_of_measurement(self):
+        """Return the unit of measurement."""
         return "%"
 
     @property
     def native_value(self):
-        return self.api.recording_capacity
+        """Return the name."""
+        if self._quota:
+            return int(self._quota.percentage_used)
+        return None
 
     @property
     def state_class(self):
+        """State class."""
         return "total"
 
     def __init__(self, hass: HomeAssistant, username: str, api: LGHorizonApi) -> None:
@@ -81,4 +83,4 @@ class LGHorizonSensor(SensorEntity):
 
     async def async_update(self):
         """Update the box."""
-        await self.hass.async_add_executor_job(self.api.get_recording_capacity)
+        self._quota = await self.api.get_recording_quota()

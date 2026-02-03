@@ -2,50 +2,58 @@
 
 # pylint: disable=no-name-in-module
 import asyncio
+import datetime as dt
 import logging
 import random
-import datetime as dt
-import time
+from typing import cast
+
+
 import voluptuous as vol
-from homeassistant.const import STATE_UNAVAILABLE
-from homeassistant.helpers import config_validation as cv, entity_platform
+
 from homeassistant.components.media_player import (
-    MediaPlayerEntity,
     BrowseMedia,
-    MediaPlayerEntityFeature,
-    MediaType,
     MediaClass,
+    MediaPlayerEntity,
+    MediaPlayerEntityFeature,
     MediaPlayerState,
+    MediaType,
+    MediaPlayerDeviceClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import config_validation as cv, entity_platform
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
-
 from lghorizon import (
-    LGHorizonBox,
-    ONLINE_RUNNING,
-    ONLINE_STANDBY,
-    LGHorizonApi,
+    LGHorizonDevice,
+    LGHorizonRecording,
+    LGHorizonRecordingList,
+    LGHorizonRecordingSeason,
     LGHorizonRecordingShow,
     LGHorizonRecordingSingle,
-    LGHorizonRecordingListSeasonShow,
-    LGHorizonRecordingEpisode,
+    LGHorizonRecordingType,
+    LGHorizonRunningState,
+    LGHorizonShowRecordingList,
+    LGHorizonUIStateType,
+    LGHorizonApi,
 )
 
 from .const import (
     API,
-    CONF_REFRESH_TOKEN,
-    DOMAIN,
-    RECORD,
-    REWIND,
-    FAST_FORWARD,
-    CONF_REMOTE_KEY,
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
+    CONF_REFRESH_TOKEN,
+    CONF_REMOTE_KEY,
+    CONF_MESSAGE,
+    DOMAIN,
+    FAST_FORWARD,
+    RECORD,
     REMOTE_KEY_PRESS,
+    SEND_MESSAGE,
+    REWIND,
+    CONF_INTERRUPT_APP,
 )
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,9 +63,10 @@ async def async_setup_entry(
 ) -> None:
     """Setup platform"""
     players = []
-    api = hass.data[DOMAIN][entry.entry_id][API]
-    for box in api.settop_boxes.values():
-        players.append(LGHorizonMediaPlayer(box, api, hass, entry))
+    api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
+    device_dic: dict[str, LGHorizonDevice] = await api.get_devices()
+    for device in device_dic.values():
+        players.append(LGHorizonMediaPlayer(device, api, hass, entry))
     async_add_entities(players, True)
 
     platform = entity_platform.async_get_current_platform()
@@ -67,15 +76,29 @@ async def async_setup_entry(
         _LOGGER.debug(
             "Service %s was called for box %s", call.service, entity.unique_id
         )
+        devices = await api.get_devices()
+        device = devices[entity.unique_id]
         if call.service == REWIND:
-            api.settop_boxes[entity.unique_id].rewind()
+            await device.rewind()
         elif call.service == FAST_FORWARD:
-            api.settop_boxes[entity.unique_id].fast_forward()
+            await device.fast_forward()
         elif call.service == RECORD:
-            api.settop_boxes[entity.unique_id].record()
+            await device.record()
+        elif call.service == SEND_MESSAGE:
+            if device.device_state.state != LGHorizonRunningState.ONLINE_RUNNING:
+                return
+            interrupt_app = call.data[CONF_INTERRUPT_APP]
+            if (
+                device.device_state.ui_state_type == LGHorizonUIStateType.APPS
+                and not interrupt_app
+            ):
+                return
+
+            message = call.data[CONF_MESSAGE]
+            await device.display_message(device.device_state.source_type.value, message)
         elif call.service == REMOTE_KEY_PRESS:
             key = call.data[CONF_REMOTE_KEY]
-            api.settop_boxes[entity.unique_id].send_key_to_box(key)
+            await device.send_key_to_box(key)
 
     platform.async_register_entity_service(
         RECORD,
@@ -101,22 +124,183 @@ async def async_setup_entry(
         handle_default_services,
     )
 
+    message_schema = cv.make_entity_service_schema(
+        {
+            vol.Required(CONF_MESSAGE): cv.string,
+            vol.Optional(CONF_INTERRUPT_APP, default=False): cv.boolean,
+        }
+    )
+    platform.async_register_entity_service(
+        SEND_MESSAGE,
+        message_schema,
+        handle_default_services,
+    )
+
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
     """The home assistant media player."""
 
+    _device: LGHorizonDevice
+
+    def __init__(
+        self,
+        device: LGHorizonDevice,
+        api: LGHorizonApi,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+    ) -> None:
+        """Init the media player."""
+        self._device = device
+        self.api = api
+        self.hass = hass
+        self.entry = entry
+        self._channels = {}
+
     @property
     def unique_id(self):
         """Return the unique id."""
-        return self.box_id
+        return self._device.device_id
 
     @property
-    def media_image_remotely_accessible(self):
+    def available(self):
+        """Return True if the device is available."""
+        return self._device.is_available
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._device.device_friendly_name
+
+    @property
+    def state(self):
+        """Return the state of the player."""
+        if self._device.device_state.state == LGHorizonRunningState.ONLINE_RUNNING:
+            if (
+                self._device.device_state is not None
+                and self._device.device_state.paused
+            ):
+                return MediaPlayerState.PAUSED
+            return MediaPlayerState.PLAYING
+        if self._device.device_state.state == LGHorizonRunningState.ONLINE_STANDBY:
+            return MediaPlayerState.OFF
+        return STATE_UNAVAILABLE
+
+    @property
+    def supported_features(self):
+        """Return the supported features."""
+
+        common_features = [
+            MediaPlayerEntityFeature.PLAY,
+            MediaPlayerEntityFeature.PAUSE,
+            MediaPlayerEntityFeature.STOP,
+            MediaPlayerEntityFeature.TURN_ON,
+            MediaPlayerEntityFeature.TURN_OFF,
+            MediaPlayerEntityFeature.SELECT_SOURCE,
+            MediaPlayerEntityFeature.PLAY_MEDIA,
+            MediaPlayerEntityFeature.BROWSE_MEDIA,
+        ]
+        if self._device.device_state.ui_state_type != LGHorizonUIStateType.APPS:
+            common_features.extend(
+                [
+                    MediaPlayerEntityFeature.NEXT_TRACK,
+                    MediaPlayerEntityFeature.PREVIOUS_TRACK,
+                    MediaPlayerEntityFeature.SEEK,
+                ]
+            )
+        combined = MediaPlayerEntityFeature(0)
+        for f in common_features:
+            combined |= f
+        return combined
+
+    @property
+    def extra_state_attributes(self):
+        """Return device specific state attributes."""
+        return {
+            "ui_mode": self._device.device_state.ui_state_type,
+            "play_mode": self._device.device_state.source_type,
+            "channel": self._device.device_state.channel_name,
+            "recording_capacity": self._device.recording_capacity,
+        }
+
+    @property
+    def should_poll(self):
+        """Shoud it poll."""
         return True
 
     @property
+    def app_id(self) -> str | None:
+        """Return the unique id."""
+        if (
+            self._device.device_state.ui_state_type
+            and self._device.device_state.ui_state_type == LGHorizonUIStateType.APPS
+        ):
+            return self._device.device_state.id
+        return None
+
+    @property
+    def app_name(self) -> str | None:
+        """Return the unique id."""
+        if (
+            self._device.device_state.ui_state_type
+            and self._device.device_state.ui_state_type == LGHorizonUIStateType.APPS
+        ):
+            return self._device.device_state.show_title
+        return None
+
+    @property
     def device_class(self):
-        return "tv"
+        """Device class of the media player."""
+        return MediaPlayerDeviceClass.TV
+
+    @property
+    def media_channel(self) -> str | None:
+        """Return the unique id."""
+        return (
+            self._device.device_state.channel_name
+        )  # self._device.device_state.channel_name
+
+    @property
+    def media_content_id(self) -> str | None:
+        """Return the media type."""
+        return self._device.device_state.id
+
+    @property
+    def media_content_type(self) -> str | None:
+        """Return the media type."""
+        return MediaType.TVSHOW
+
+    @property
+    def media_duration(self) -> int | None:
+        """Duration of current playing media in seconds."""
+        if not self._device.device_state.duration:
+            return 0
+        return round(self._device.device_state.duration)
+
+    @property
+    def media_episode(self) -> str | None:
+        """Return the media type."""
+        if self._device.device_state.episode_number:
+            return str(self._device.device_state.episode_number).zfill(2)
+        return None
+
+    @property
+    def media_image_remotely_accessible(self):
+        """Is image remotely accessible."""
+        return True
+
+    @property
+    def media_image_url(self):
+        """Return the media image URL."""
+        image_url = self._device.device_state.image
+        if image_url is None:
+            return None
+
+        if self._device.device_state.state == LGHorizonRunningState.ONLINE_RUNNING:
+            join_param = "?"
+            if join_param in image_url:
+                join_param = "&"
+            image_url = f"{image_url}{join_param}random={random.randrange(1000000)!s}"
+        return image_url
 
     @property
     def device_info(self):
@@ -124,140 +308,48 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         return {
             "identifiers": {
                 # Serial numbers are unique identifiers within a specific domain
-                (DOMAIN, self._box.device_id)
+                (DOMAIN, self._device.device_id)
             },
-            "name": self._box.device_friendly_name,
-            "manufacturer": self._box.manufacturer or "unknown",
-            "model": self._box.model or "unknown",
+            "name": self._device.device_friendly_name,
+            "manufacturer": self._device.manufacturer or "unknown",
+            "model": self._device.model or "unknown",
         }
 
-    def __init__(
-        self,
-        box: LGHorizonBox,
-        api: LGHorizonApi,
-        hass: HomeAssistant,
-        entry: ConfigEntry,
-    ):
-        """Init the media player."""
-        self._box = box
-        self.api = api
-        self.hass = hass
-        self.entry = entry
-        self.box_id = box.device_id
-        self.box_name = box.device_friendly_name
-
-    async def async_added_to_hass(self):
-        """Use lifecycle hooks."""
-
-        def state_callback(box_id):
-            self.schedule_update_ha_state(True)
-
-        def refresh_callback():
-            self.hass.add_job(self._save_refresh_token)
-
-        self._box.set_callback(state_callback)
-        self.api.set_callback(refresh_callback)
-
-    @callback
-    def _save_refresh_token(self):
-        """Save the refresh token."""
-        if CONF_REFRESH_TOKEN in self.entry.data:
-            _LOGGER.info("New JWT stored (2): %s", self.api.refresh_token)
-            new_data = {**self.entry.data}
-            new_data[CONF_REFRESH_TOKEN] = self.api.refresh_token
-            self.hass.config_entries.async_update_entry(self.entry, data=new_data)
-
-    async def async_update(self):
-        """Update the box."""
-        pass
+    @property
+    def media_position(self) -> int | None:
+        """Position of current playing media in seconds."""
+        if not self._device.device_state.position:
+            return None
+        return round(self._device.device_state.position / 1000)
 
     @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self.box_name
-
-    @property
-    def state(self):
-        """Return the state of the player."""
-        if self._box.state == ONLINE_RUNNING:
-            if self._box.playing_info is not None and self._box.playing_info.paused:
-                return MediaPlayerState.PAUSED
-            return MediaPlayerState.PLAYING
-        if self._box.state == ONLINE_STANDBY:
-            return MediaPlayerState.OFF
-        return STATE_UNAVAILABLE
-
-    @property
-    def media_content_type(self):
-        """Return the media type."""
-        return MediaType.EPISODE
-
-    @property
-    def supported_features(self):
-        """Return the supported features."""
-        if self._box.playing_info.source_type == "app":
-            return (
-                MediaPlayerEntityFeature.PLAY
-                | MediaPlayerEntityFeature.PAUSE
-                | MediaPlayerEntityFeature.STOP
-                | MediaPlayerEntityFeature.TURN_ON
-                | MediaPlayerEntityFeature.TURN_OFF
-                | MediaPlayerEntityFeature.SELECT_SOURCE
-                | MediaPlayerEntityFeature.PLAY_MEDIA
-                | MediaPlayerEntityFeature.BROWSE_MEDIA
-                # | SUPPORT_SEEK
-            )
-        return (
-            MediaPlayerEntityFeature.PLAY
-            | MediaPlayerEntityFeature.PAUSE
-            | MediaPlayerEntityFeature.STOP
-            | MediaPlayerEntityFeature.TURN_ON
-            | MediaPlayerEntityFeature.TURN_OFF
-            | MediaPlayerEntityFeature.SELECT_SOURCE
-            | MediaPlayerEntityFeature.NEXT_TRACK
-            | MediaPlayerEntityFeature.PREVIOUS_TRACK
-            | MediaPlayerEntityFeature.PLAY_MEDIA
-            | MediaPlayerEntityFeature.BROWSE_MEDIA
-            # | SUPPORT_SEEK
+    def media_position_updated_at(self) -> dt.datetime | None:
+        """When was the position of the current playing media valid."""
+        return dt_util.utc_from_timestamp(
+            int(self._device.device_state.last_position_update or 0) / 1000
         )
 
     @property
-    def available(self):
-        """Return True if the device is available."""
-        available = self._box.is_available()
-        return available
-
-    async def async_turn_on(self):
-        """Turn the media player on."""
-        self._box.turn_on()
-
-    async def async_turn_off(self):
-        """Turn the media player off."""
-        self._box.turn_off()
+    def media_season(self) -> str | None:
+        """Return the media title."""
+        if self._device.device_state.season_number:
+            return str(self._device.device_state.season_number).zfill(2)
+        return None
 
     @property
-    def media_image_url(self):
-        """Return the media image URL."""
-        image_url = self._box.playing_info.image
-        if image_url is None:
-            return None
-
-        if self._box.playing_info.source_type == "linear":
-            join_param = "?"
-            if join_param in self._box.playing_info.image:
-                join_param = "&"
-            image_url = f"{image_url}{join_param}{str(random.randrange(1000000))}"
-        return image_url
+    def media_series_title(self):
+        """Return the media title."""
+        return self._device.device_state.episode_title or ""
 
     @property
     def media_title(self):
         """Return the media title."""
-        return self._box.playing_info.title
+        return self._device.device_state.show_title
 
     @property
     def source(self):
         """Name of the current channel."""
-        return self._box.playing_info.channel_title
+        return self._device.device_state.channel_name
 
     @property
     def source_list(self):
@@ -267,12 +359,9 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             CONF_CHANNEL_SORT, self.entry.data.get(CONF_CHANNEL_SORT, "number")
         )
         excluded_channels = self.entry.data.get(CONF_EXCLUDED_CHANNELS) or []
-
-        channels = self.api.get_display_channels() or []
         # Use a set of strings so we can compare reliably to channel_number
         excluded_set = {str(ch) for ch in excluded_channels}
-
-        channels = self.api.get_display_channels() or []
+        channels = self._channels.values() or {}
         # Filter out excluded channels by channel number
         if excluded_set:
             channels = [
@@ -285,58 +374,70 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             sorted_channels = sorted(channels, key=lambda ch: ch.title.lower())
         return [ch.title for ch in sorted_channels]
 
-    @property
-    def media_duration(self) -> int | None:
-        """Duration of current playing media in seconds."""
-        if self._box.playing_info.duration:
-            return int(self._box.playing_info.duration)
-        return None
+    async def async_added_to_hass(self):
+        """Use lifecycle hooks."""
 
-    @property
-    def media_position(self) -> int | None:
-        """Position of current playing media in seconds."""
-        if self._box.playing_info.position:
-            return int(self._box.playing_info.position)
-        return None
+        async def state_callback(box_id):
+            self.schedule_update_ha_state(True)
 
-    @property
-    def media_position_updated_at(self) -> dt.datetime | None:
-        """When was the position of the current playing media valid."""
-        if self._box.playing_info.last_position_update:
-            return dt_util.utcnow()
-        return None
+        await self._device.set_callback(state_callback)
+        self._channels = await self.api.get_profile_channels()
 
-    async def async_select_source(self, source):
+        @callback
+        def _save_refresh_token(self, refresh_token: str):
+            """Save the refresh token."""
+            if CONF_REFRESH_TOKEN in self.entry.data:
+                new_data = {**self.entry.data}
+                new_data[CONF_REFRESH_TOKEN] = refresh_token
+                self.hass.config_entries.async_update_entry(self.entry, data=new_data)
+
+        await self.api.set_token_refresh_callback(_save_refresh_token)
+
+    async def async_update(self):
+        """Update the box."""
+
+    async def async_turn_on(self):
+        """Turn the media player on."""
+        await self._device.turn_on()
+
+    async def async_turn_off(self):
+        """Turn the media player off."""
+        await self._device.turn_off()
+
+    async def async_select_source(self, source: str) -> None:
         """Select a new source."""
-        self._box.set_channel(source)
+        await self._device.set_channel(source)
 
     async def async_media_play(self):
         """Play selected box."""
-        self._box.play()
+        await self._device.play()
 
     async def async_media_pause(self):
         """Pause the given box."""
-        self._box.pause()
+        await self._device.pause()
 
     async def async_media_stop(self):
         """Stop the given box."""
-        self._box.stop()
+        await self._device.stop()
 
     async def async_media_next_track(self):
         """Send next track command."""
-        self._box.next_channel()
+        await self._device.next_channel()
 
     async def async_media_previous_track(self):
         """Send previous track command."""
-        self._box.previous_channel()
+        await self._device.previous_channel()
+
+    async def async_media_seek(self, position: float) -> None:
+        """Send seek command."""
+        await self._device.set_player_position(int(position * 1000))
 
     async def async_play_media(self, media_type, media_id, **kwargs):
         """Support changing a channel."""
         if media_type == MediaType.EPISODE:
-            self._box.play_recording(media_id)
-            pass
+            await self._device.play_recording(media_id)
         elif media_type == MediaType.APP:
-            self._box.set_channel(media_id)
+            await self._device.set_channel(media_id)
         elif media_type == MediaType.CHANNEL:
             # media_id should only be a channel number
             try:
@@ -344,32 +445,17 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             except vol.Invalid:
                 _LOGGER.error("Media ID must be positive integer")
                 return
-            if self._box.playing_info.source_type == "app":
-                self._box.send_key_to_box("TV")
+            if self._device.playing_info.source_type == "app":
+                await self._device.send_key_to_box("TV")
                 await asyncio.sleep(1)
 
             for digit in media_id:
-                self._box.send_key_to_box(f"{digit}")
+                await self._device.send_key_to_box(f"{digit}")
         else:
             _LOGGER.error("Unsupported media type")
 
-    @property
-    def extra_state_attributes(self):
-        """Return device specific state attributes."""
-        return {
-            "play_mode": self._box.playing_info.source_type,
-            "channel": self._box.playing_info.channel_title,
-            "title": self._box.playing_info.title,
-            "image": self._box.playing_info.image,
-            "recording_capacity": self._box.recording_capacity,
-        }
-
-    @property
-    def should_poll(self):
-        return True
-
     async def async_browse_media(self, media_content_type=None, media_content_id=None):
-        _LOGGER.debug("%s - %s", media_content_type, media_content_id)
+        """Support browsing media."""
         if media_content_type in [None, "main"]:
             main = BrowseMedia(
                 title="Opnames",
@@ -381,84 +467,87 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 children=[],
                 children_media_class=MediaClass.DIRECTORY,
             )
-            recordings = await self.hass.async_add_executor_job(self.api.get_recordings)
-            for recording in recordings:
-                if isinstance(recording, LGHorizonRecordingListSeasonShow):
-                    show: LGHorizonRecordingListSeasonShow = recording
-                    show_media = BrowseMedia(
-                        title=show.title,
-                        media_class=MediaClass.TV_SHOW,
-                        media_content_type=MediaType.TVSHOW,
-                        media_content_id=show.show_id,
-                        can_play=False,
-                        can_expand=True,
-                        thumbnail=show.image,
-                        children=[],
-                        children_media_class=MediaClass.DIRECTORY,
-                    )
-                    main.children.append(show_media)
-                if isinstance(recording, LGHorizonRecordingSingle):
-                    single: LGHorizonRecordingSingle = recording
-                    single_media = BrowseMedia(
-                        title=single.title,
-                        media_class=MediaClass.EPISODE,
-                        media_content_type=MediaType.EPISODE,
-                        media_content_id=single.recording_id,
-                        can_play=True,
-                        can_expand=False,
-                        thumbnail=single.image,
-                    )
-                    main.children.append(single_media)
+            recordings_list: LGHorizonRecordingList = (
+                await self.api.get_all_recordings()
+            )
+            recording: LGHorizonRecording
+            for recording in recordings_list.recordings:
+                match recording.type:
+                    case LGHorizonRecordingType.SEASON:
+                        recording.__class__ = LGHorizonRecordingSeason
+                        season_recording = cast(LGHorizonRecordingSeason, recording)
+                        show_media = BrowseMedia(
+                            title=season_recording.title,
+                            media_class=MediaClass.TV_SHOW,
+                            media_content_type=MediaType.TVSHOW,
+                            media_content_id=f"{season_recording.show_id}|{recording.channel_id}",
+                            can_play=False,
+                            can_expand=True,
+                            thumbnail=season_recording.poster_url,
+                            children=[],
+                            children_media_class=MediaClass.DIRECTORY,
+                        )
+                        main.children.append(show_media)
+                    case LGHorizonRecordingType.SEASON:
+                        recording.__class__ = LGHorizonRecordingShow
+                        show_recording = cast(LGHorizonRecordingShow, recording)
+                        show_media = BrowseMedia(
+                            title=show_recording.title,
+                            media_class=MediaClass.TV_SHOW,
+                            media_content_type=MediaType.TVSHOW,
+                            media_content_id=f"{show_recording.id}|{recording.channel_id}",
+                            can_play=False,
+                            can_expand=True,
+                            thumbnail=show_recording.poster_url,
+                            children=[],
+                            children_media_class=MediaClass.DIRECTORY,
+                        )
+                        main.children.append(show_media)
+                    case LGHorizonRecordingType.SINGLE:
+                        recording.__class__ = LGHorizonRecordingSingle
+                        single_recording = cast(LGHorizonRecordingSingle, recording)
+                        show_media = BrowseMedia(
+                            title=single_recording.title,
+                            media_class=MediaClass.EPISODE,
+                            media_content_type=MediaType.EPISODE,
+                            media_content_id=single_recording.id,
+                            can_play=True,
+                            can_expand=False,
+                            thumbnail=single_recording.poster_url,
+                        )
+                        main.children.append(show_media)
             return main
-        elif media_content_type == MediaType.TVSHOW:
-            episodes_data = await self.hass.async_add_executor_job(
-                self.api.get_recording_show, media_content_id
+        if media_content_type == MediaType.TVSHOW:
+            show_id, channel_id = media_content_id.split("|", 1)
+            show_recordings_list: LGHorizonShowRecordingList = (
+                await self.api.get_show_recordings(show_id, channel_id)
             )
             children = []
-
-            for episode_data in episodes_data:
-                if isinstance(episode_data, LGHorizonRecordingEpisode):
-                    episode_recording: LGHorizonRecordingEpisode = episode_data
-                    planned: bool = episode_recording.recording_state == "planned"
-                    title = f"S{episode_recording.season_number:02} E{episode_recording.episode_number:02}: {episode_recording.show_title} - {episode_recording.episode_title}"
-                    if planned:
-                        title += " (planned)"
-                    episode_media = BrowseMedia(
-                        title=title,
-                        media_class=MediaClass.EPISODE,
-                        media_content_type=MediaType.EPISODE,
-                        media_content_id=episode_recording.episode_id,
-                        can_play=not planned,
-                        can_expand=False,
-                        thumbnail=episode_recording.image,
-                    )
-                    children.append(episode_media)
-                elif isinstance(episode_data, LGHorizonRecordingShow):
-                    show_recording: LGHorizonRecordingShow = episode_data
-                    planned: bool = show_recording.recording_state == "planned"
-                    title = f"S{show_recording.season_number:02} E{show_recording.episode_number:02}: {show_recording.show_title}"
-                    if planned:
-                        title += " (planned)"
-                    show_media = BrowseMedia(
-                        title=title,
-                        media_class=MediaClass.EPISODE,
-                        media_content_type=MediaType.EPISODE,
-                        media_content_id=show_recording.episode_id,
-                        can_play=not planned,
-                        can_expand=False,
-                        thumbnail=show_recording.image,
-                    )
-                    children.append(show_media)
-            show_container = BrowseMedia(
-                title=episodes_data[0].show_title,
+            list_show_recording: LGHorizonRecording
+            for list_show_recording in show_recordings_list.recordings:
+                list_show_recording.__class__ = LGHorizonRecordingSingle
+                single_show_recording = cast(
+                    LGHorizonRecordingSingle, list_show_recording
+                )
+                show_media = BrowseMedia(
+                    title=f"S{str(single_show_recording.season_number).zfill(2)}E{str(single_show_recording.episode_number).zfill(2)} {single_show_recording.episode_title or ''}",
+                    media_class=MediaClass.EPISODE,
+                    media_content_type=MediaType.EPISODE,
+                    media_content_id=single_show_recording.episode_id,
+                    can_play=True,
+                    can_expand=False,
+                    thumbnail=single_show_recording.poster_url,
+                )
+                children.append(show_media)
+            return BrowseMedia(
+                title=show_recordings_list.show_title,
                 media_class=MediaClass.DIRECTORY,
                 media_content_type=MediaType.TVSHOW,
-                media_content_id=MediaType.TVSHOW,
+                media_content_id="subview",
                 can_play=False,
                 can_expand=False,
                 children=children,
                 children_media_class=MediaClass.EPISODE,
-                thumbnail=episodes_data[0].image,
+                thumbnail=show_recordings_list.show_image,
             )
-            return show_container
         return None
