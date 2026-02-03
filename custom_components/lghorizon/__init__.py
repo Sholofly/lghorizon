@@ -1,7 +1,7 @@
 """The lghorizon integration."""
 
 from __future__ import annotations
-
+import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -9,7 +9,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
-from lghorizon import LGHorizonApi, LGHorizonAuth
+from lghorizon import LGHorizonApi, LGHorizonAuth, COUNTRY_SETTINGS
 
 from .const import API, CONF_COUNTRY_CODE, CONF_PROFILE_ID, CONF_REFRESH_TOKEN, DOMAIN
 
@@ -27,6 +27,43 @@ CONFIG_SCHEMA = vol.Schema(
     },
     extra=vol.ALLOW_EXTRA,
 )
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_migrate_entry(hass, config_entry: ConfigEntry):
+    """Migrate old entry."""
+    _LOGGER.debug(
+        "Migrating configuration from version %s.%s",
+        config_entry.version,
+        config_entry.minor_version,
+    )
+
+    if config_entry.version > 2:
+        # This means the user has downgraded from a future version
+        return False
+
+    if config_entry.version == 1:
+        new_data = {**config_entry.data}
+        # migrate key config
+        for country_code_key in COUNTRY_SETTINGS:
+            if (
+                config_entry.data[CONF_COUNTRY_CODE]
+                == COUNTRY_SETTINGS[country_code_key]["name"]
+            ):
+                new_data[CONF_COUNTRY_CODE] = country_code_key
+                break
+
+        hass.config_entries.async_update_entry(
+            config_entry, data=new_data, minor_version=1, version=2
+        )
+
+    _LOGGER.debug(
+        "Migration to configuration version %s.%s successful",
+        config_entry.version,
+        config_entry.minor_version,
+    )
+
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

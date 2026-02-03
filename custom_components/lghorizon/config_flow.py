@@ -64,7 +64,9 @@ class AccountLocked(HomeAssistantError):
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for lghorizon."""
 
-    VERSION = 1
+    VERSION = 2
+    MINOR_VERSION = 1
+
     CONFIG_DATA: dict[str, Any] = None
 
     customer: LGHorizonCustomer = None
