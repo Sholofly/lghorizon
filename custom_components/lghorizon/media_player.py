@@ -37,6 +37,7 @@ from lghorizon import (
     LGHorizonShowRecordingList,
     LGHorizonUIStateType,
     LGHorizonApi,
+    LGHorizonMediaType,
 )
 
 from .const import (
@@ -267,7 +268,19 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def media_content_type(self) -> str | None:
         """Return the media type."""
-        return MediaType.TVSHOW
+        if self._device.device_state.media_type == LGHorizonMediaType.UNKNOWN:
+            return None
+        match self._device.device_state.media_type:
+            case LGHorizonMediaType.CHANNEL:
+                return MediaType.CHANNEL
+            case LGHorizonMediaType.EPISODE:
+                return MediaType.TVSHOW
+            case LGHorizonMediaType.MOVIE:
+                return MediaType.MOVIE
+            case LGHorizonMediaType.APP:
+                return MediaType.APP
+
+        return None
 
     @property
     def media_duration(self) -> int | None:
