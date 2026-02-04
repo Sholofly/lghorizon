@@ -320,13 +320,13 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         """Position of current playing media in seconds."""
         if not self._device.device_state.position:
             return None
-        return round(self._device.device_state.position / 1000)
+        return self._device.device_state.position
 
     @property
     def media_position_updated_at(self) -> dt.datetime | None:
         """When was the position of the current playing media valid."""
         return dt_util.utc_from_timestamp(
-            int(self._device.device_state.last_position_update or 0) / 1000
+            int(self._device.device_state.last_position_update or 0)
         )
 
     @property
