@@ -26,9 +26,9 @@ async def async_setup_entry(
         return
 
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
-    capacity = await api.get_recording_quota()
-    if not capacity:
-        _LOGGER.debug("No recording capacity available. No sensor added")
+
+    if not api.has_cloud_recording:
+        _LOGGER.debug("No recording capacity available. No sensor added.")
         return
 
     username = hass.data[DOMAIN][entry.entry_id][CONF_USERNAME]
