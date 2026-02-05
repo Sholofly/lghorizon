@@ -226,7 +226,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.CONFIG_DATA[CONF_USERNAME],
                 self.CONFIG_DATA[CONF_PASSWORD],
             )
-            api = LGHorizonApi(auth, self.CONFIG_DATA[CONF_PROFILE_ID])
+            api = LGHorizonApi(auth, profile_id = self.CONFIG_DATA[CONF_PROFILE_ID])
             await api.initialize()
             profile_id = self.CONFIG_DATA[CONF_PROFILE_ID]
             self._profiles = await api.get_profiles()
