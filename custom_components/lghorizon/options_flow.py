@@ -41,7 +41,7 @@ class OptionsFlowHandler(OptionsFlowWithReload):
             self.config_entry.data[CONF_USERNAME],
             self.config_entry.data[CONF_PASSWORD],
         )
-        api: LGHorizonApi = LGHorizonApi(auth, self.config_entry.data[CONF_PROFILE_ID])
+        api: LGHorizonApi = LGHorizonApi(auth, profile_id = self.config_entry.data[CONF_PROFILE_ID])
         await api.initialize()
         profile_id = self.config_entry.data[CONF_PROFILE_ID]
         channels = await api.get_profile_channels(profile_id)
