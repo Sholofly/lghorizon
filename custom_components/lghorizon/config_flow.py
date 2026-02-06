@@ -10,6 +10,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.typing import Mapping
 from homeassistant.exceptions import HomeAssistantError
 from .options_flow import OptionsFlowHandler
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
@@ -72,6 +73,75 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     customer: LGHorizonCustomer = None
     _channels = []
     _profiles = []
+    _username = ""
+    _country_code = ""
+
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> config_entries.ConfigFlowResult:
+        """Perform reauthentication upon an API authentication error."""
+        self._username = entry_data[CONF_USERNAME]
+        self._country_code = entry_data[CONF_COUNTRY_CODE]
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Confirm reauthentication dialog."""
+        errors: dict[str, str] = {}
+        if user_input:
+            client_session = async_get_clientsession(self.hass)
+
+            try:
+                auth = LGHorizonAuth(
+                    client_session,
+                    self._country_code,
+                    user_input.get(CONF_REFRESH_TOKEN, None),
+                    self._username,
+                    user_input.get(CONF_PASSWORD, None),
+                )
+                api = LGHorizonApi(auth, profile_id=None)
+                await api.initialize()
+                await api.disconnect()
+
+            except LGHorizonApiUnauthorizedError as lgau_err:
+                raise InvalidAuth from lgau_err
+            except LGHorizonApiConnectionError as lgac_err:
+                raise CannotConnect from lgac_err
+            except LGHorizonApiLockedError as lgal_err:
+                raise AccountLocked from lgal_err
+            except Exception as ex:
+                _LOGGER.error(ex)
+                raise CannotConnect from ex
+            else:
+                await self.async_set_unique_id(self.unique_id)
+                self._abort_if_unique_id_mismatch(reason="wrong_account")
+                return self.async_update_reload_and_abort(
+                    self._get_reauth_entry(),
+                    data_updates={
+                        CONF_PASSWORD: user_input.get(CONF_PASSWORD, None),
+                        CONF_REFRESH_TOKEN: user_input.get(CONF_REFRESH_TOKEN, None),
+                    },
+                )
+
+        reauth_schema: vol.Schema = vol.Schema({})
+
+        if COUNTRY_SETTINGS[self._country_code].get("use_refreshtoken", True):
+            reauth_schema = reauth_schema.extend(
+                {
+                    vol.Optional(CONF_REFRESH_TOKEN): cv.string,
+                }
+            )
+        else:
+            reauth_schema = reauth_schema.extend(
+                {vol.Required(CONF_PASSWORD): cv.string}
+            )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=reauth_schema,
+            errors=errors,
+        )
 
     async def async_step_user(
         self,
@@ -226,7 +296,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.CONFIG_DATA[CONF_USERNAME],
                 self.CONFIG_DATA[CONF_PASSWORD],
             )
-            api = LGHorizonApi(auth, profile_id = self.CONFIG_DATA[CONF_PROFILE_ID])
+            api = LGHorizonApi(auth, profile_id=self.CONFIG_DATA[CONF_PROFILE_ID])
             await api.initialize()
             profile_id = self.CONFIG_DATA[CONF_PROFILE_ID]
             self._profiles = await api.get_profiles()
