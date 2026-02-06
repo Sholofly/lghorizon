@@ -26,6 +26,10 @@
           "channel_sort": "Channel sort order",
           "excluded_channels": "Excluded channels"
         }
+      },
+      "reauth_confirm": {
+        "description": "Your LGHorizon account authorization has expired. Please re-enter your credential(s)",
+        "title": "Authentication expired"
       }
     },
     "error": {
@@ -35,7 +39,8 @@
       "unknown": "Unknown error"
     },
     "abort": {
-      "already_configured": "This account is already configured."
+      "already_configured": "This account is already configured.",
+      "reauth_successful": "Reauthentication succesful."
     }
   },
   "options": {

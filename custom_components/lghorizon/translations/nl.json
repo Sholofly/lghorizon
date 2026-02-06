@@ -26,6 +26,10 @@
           "channel_sort": "Kanaalvolgorde",
           "excluded_channels": "Uitgesloten kanalen"
         }
+      },
+      "reauth_confirm": {
+        "description": "Je LGHorizon account authorization is verlopen. Vul je refreshtoken of wachtwoord opnieuw in",
+        "title": "Authenticatie verlopen"
       }
     },
     "error": {
@@ -35,7 +39,8 @@
       "unknown": "Onbekende fout"
     },
     "abort": {
-      "already_configured": "Dit account is reeds toegevoegd."
+      "already_configured": "Dit account is reeds toegevoegd.",
+      "reauth_successful": "Herauthenticatie geslaagd"
     }
   },
   "options": {
