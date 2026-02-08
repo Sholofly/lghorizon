@@ -32,20 +32,20 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 
 ## HACS Installation
 
-1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites)
+1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites).
 2. In the integrations tab, search for LG Horizon.
-3. Install the Integration. Please consider enabling beta versions to keep track of the latest (experimental) features.
-4. Configure the integration using the HA integration page, Search for LG Horizon.
+3. Install the integration. Please consider enabling beta versions to keep track of the latest (experimental) features.
+4. Configure the integration using the HA integration page. Search for 'LG Horizon'.
 
 ## Manual installation
 
 1. Open the directory (folder) for your HA configuration (where you find configuration.yaml).
-2. If you do not have a custom_components directory (folder) there, you need to create it.
+2. If you do not have a `custom_components` directory (folder) there, you need to create it.
 3. In the custom_components directory (folder) create a new folder called lghorizon.
 4. Download all the files from the custom_components/lghorizon/ directory (folder) in this repository.
 5. Place the files you downloaded in the new directory (folder) you created.
 6. Restart Home Assistant
-7. Configure the integration using the HA integration page, Search for LG Horizon.
+7. Configure the integration using the HA integration page. Search for 'LG Horizon'.
 
 ## Configuration (Example!)
 
@@ -65,8 +65,7 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 
 ## Fetching your refresh token
 
-For the Telenet BE, Virgin GB and the Sunrise CH integration the Password is not used, instead, you need your refresh token.
-To get the refresh token you need to open the developer toolbar in your chromium based browser.
+For integrations other than Ziggo a password is not used, instead, you need to supply a refresh token so the integration can retrieve an access token to communicate with your provider. To get the refresh token you need to open the developer toolbar in your chromium based browser.
 
 1. Login to your Virgin box using any Chromium based (i.e. Chrome, Edge) as your web browser:
 
@@ -80,13 +79,15 @@ To get the refresh token you need to open the developer toolbar in your chromium
 
 4. On the right side copy the value under: flutter.\_WEB_SECURE_STORAGE_refreshToken
 
+NOTE: The refresh token has an expiry period. For Ziggo it's two weeks. For other providers I just don't know. I expect the same but I'm not sure. The day before expiry a new refresh token will be retrieved automatically! If there's no activity with the access token (i.e you didn't use your box or HA was down for two weeks) within the expiry period, the integration will ask you to re-supply a refresh token.
+
 ## Service to change channel
 
 ```yaml
 service: media_player.play_media
 data:
   media_content_type: channel # 'channel' when media_content_id is channelnumber, 'app' when media_content_id is 'Netflix' or 'Videoland'
-  media_content_id: "401" # Any channel number, 'Netflix' or 'Videoland'
+  media_content_id: "401" # Any channel number, 'Netflix', or 'Videoland'
 target:
   entity_id: media_player.ziggo_beneden
 ```
@@ -125,6 +126,18 @@ data:
 ```
 
 ![Key commands](images/remote.png)
+
+## Having issues?
+
+Please enable debug logging an create an issue on GitHub.
+NOTE: Do not just enable debug logging in HA, but also add debug logging for the underlying python component. You can configure it by configuring your logging like this:
+
+```yaml
+logger:
+  default: warning
+  logs:
+    lghorizon: debug
+```
 
 ## Disclaimer
 
