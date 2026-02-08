@@ -5,9 +5,8 @@ import logging
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from lghorizon import LGHorizonApi, LGHorizonAuth, COUNTRY_SETTINGS
@@ -81,15 +80,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     websession = async_get_clientsession(hass)
 
+    @callback
+    def _save_refresh_token(refresh_token: str):
+        """Save the refresh token."""
+        new_data = {**entry.data}
+        new_data[CONF_REFRESH_TOKEN] = refresh_token
+        hass.config_entries.async_update_entry(entry, data=new_data)
+
     auth = LGHorizonAuth(
         websession,
         entry.data[CONF_COUNTRY_CODE],
         refresh_token=refresh_token,
         username=entry.data[CONF_USERNAME],
         password=entry.data[CONF_PASSWORD],
+        token_refresh_callback=_save_refresh_token,
     )
+
     try:
         api = LGHorizonApi(auth, profile_id=profile_id)
+
         await api.initialize()
     except LGHorizonApiUnauthorizedError:
         entry.async_start_reauth()
@@ -100,11 +109,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         CONF_USERNAME: entry.data[CONF_USERNAME],
     }
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    if CONF_REFRESH_TOKEN in entry.data:
-        new_data = {**entry.data}
-        new_data[CONF_REFRESH_TOKEN] = api.auth.refresh_token
-        hass.config_entries.async_update_entry(entry, data=new_data)
 
     return True
 
