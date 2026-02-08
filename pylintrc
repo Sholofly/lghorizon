@@ -27,7 +27,6 @@ good-names=id,i,j,k,ex,Run,_,fp
 # too-many-ancestors - it's too strict.
 disable=
   format,
-  abstract-class-little-used,
   abstract-method,
   cyclic-import,
   duplicate-code,
@@ -36,7 +35,6 @@ disable=
   inconsistent-return-statements,
   locally-disabled,
   not-context-manager,
-  redefined-variable-type,
   too-few-public-methods,
   too-many-ancestors,
   too-many-arguments,
@@ -60,3 +58,6 @@ ignored-classes=_CountingAttr
 
 [FORMAT]
 expected-line-ending-format=LF
+
+[MASTER]
+extension-pkg-allow-list=lghorizon

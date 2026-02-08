@@ -1,6 +1,5 @@
 """Support for interface with a ArrisDCX960 Settopbox."""
 
-# pylint: disable=no-name-in-module
 import asyncio
 import datetime as dt
 import logging
@@ -21,7 +20,7 @@ from homeassistant.components.media_player import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
@@ -45,7 +44,6 @@ from .const import (
     API,
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
-    CONF_REFRESH_TOKEN,
     CONF_REMOTE_KEY,
     CONF_MESSAGE,
     DOMAIN,
@@ -396,16 +394,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
         await self._device.set_callback(state_callback)
         self._channels = await self.api.get_profile_channels()
-
-        @callback
-        def _save_refresh_token(self, refresh_token: str):
-            """Save the refresh token."""
-            if CONF_REFRESH_TOKEN in self.entry.data:
-                new_data = {**self.entry.data}
-                new_data[CONF_REFRESH_TOKEN] = refresh_token
-                self.hass.config_entries.async_update_entry(self.entry, data=new_data)
-
-        await self.api.set_token_refresh_callback(_save_refresh_token)
 
     async def async_update(self):
         """Update the box."""
