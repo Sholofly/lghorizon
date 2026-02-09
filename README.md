@@ -158,6 +158,7 @@ This component is not provided, supported or maintained by any of the companies 
   - [Colin Robbins (UK)](https://github.com/ColinRobbins)
 - Testing by:
   - Craig McGowan (GB)
+  - [Filip Heens (BE)](https://github.com/filip-heens)
   - Jarne Roussard (BE)
   - Sammy Verdonck (BE)
   - Jordi Smolders (BE)
