@@ -44,6 +44,7 @@ from .const import (
     CONF_PROFILE_ID,
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
+    CONF_INTERRUPT_APP,
 )
 
 
@@ -65,7 +66,7 @@ class AccountLocked(HomeAssistantError):
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for lghorizon."""
 
-    VERSION = 2
+    VERSION = 3
     MINOR_VERSION = 1
 
     CONFIG_DATA: dict[str, Any] = None
@@ -271,6 +272,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         multiple=True,
                     ),
                 ),
+                vol.Optional(CONF_INTERRUPT_APP, default=False): cv.boolean,
             }
         )
 

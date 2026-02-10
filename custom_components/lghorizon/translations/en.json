@@ -24,7 +24,8 @@
         "data": {
           "profile_id": "Profile",
           "channel_sort": "Channel sort order",
-          "excluded_channels": "Excluded channels"
+          "excluded_channels": "Excluded channels",
+          "interrupt_app": "Allow app to be stopped to display notifications. If not, messages will not be shown when an app is running"
         }
       },
       "reauth_confirm": {
@@ -50,7 +51,8 @@
         "description": "Change the settings for your LG Horizon integration.",
         "data": {
           "channel_sort": "Channel sort order",
-          "excluded_channels": "Excluded channels"
+          "excluded_channels": "Excluded channels",
+          "interrupt_app": "Allow app to be stopped to display notifications. If not, messages will not be shown when an app is running"
         }
       }
     }

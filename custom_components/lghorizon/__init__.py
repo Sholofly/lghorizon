@@ -12,9 +12,16 @@ import homeassistant.helpers.config_validation as cv
 from lghorizon import LGHorizonApi, LGHorizonAuth, COUNTRY_SETTINGS
 from lghorizon import LGHorizonApiUnauthorizedError
 
-from .const import API, CONF_COUNTRY_CODE, CONF_PROFILE_ID, CONF_REFRESH_TOKEN, DOMAIN
+from .const import (
+    API,
+    CONF_COUNTRY_CODE,
+    CONF_PROFILE_ID,
+    CONF_REFRESH_TOKEN,
+    DOMAIN,
+    CONF_INTERRUPT_APP,
+)
 
-PLATFORMS = ["media_player", "sensor"]
+PLATFORMS = ["media_player", "sensor", "notify"]
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
@@ -39,12 +46,16 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
         config_entry.minor_version,
     )
 
-    if config_entry.version > 2:
+    new_data = {**config_entry.data}
+
+    if config_entry.version > 3:
         # This means the user has downgraded from a future version
         return False
 
-    if config_entry.version == 1:
-        new_data = {**config_entry.data}
+    if config_entry.version < 3:
+        new_data[CONF_INTERRUPT_APP] = False
+
+    if config_entry.version < 2:
         # migrate key config
         for country_code_key in COUNTRY_SETTINGS:
             if (
@@ -54,9 +65,9 @@ async def async_migrate_entry(hass, config_entry: ConfigEntry):
                 new_data[CONF_COUNTRY_CODE] = country_code_key
                 break
 
-        hass.config_entries.async_update_entry(
-            config_entry, data=new_data, minor_version=1, version=2
-        )
+    hass.config_entries.async_update_entry(
+        config_entry, data=new_data, minor_version=1, version=2
+    )
 
     _LOGGER.debug(
         "Migration to configuration version %s.%s successful",

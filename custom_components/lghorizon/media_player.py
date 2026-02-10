@@ -45,14 +45,11 @@ from .const import (
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
     CONF_REMOTE_KEY,
-    CONF_MESSAGE,
     DOMAIN,
     FAST_FORWARD,
     RECORD,
     REMOTE_KEY_PRESS,
-    SEND_MESSAGE,
     REWIND,
-    CONF_INTERRUPT_APP,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -84,18 +81,6 @@ async def async_setup_entry(
             await device.fast_forward()
         elif call.service == RECORD:
             await device.record()
-        elif call.service == SEND_MESSAGE:
-            if device.device_state.state != LGHorizonRunningState.ONLINE_RUNNING:
-                return
-            interrupt_app = call.data[CONF_INTERRUPT_APP]
-            if (
-                device.device_state.ui_state_type == LGHorizonUIStateType.APPS
-                and not interrupt_app
-            ):
-                return
-
-            message = call.data[CONF_MESSAGE]
-            await device.display_message(device.device_state.source_type.value, message)
         elif call.service == REMOTE_KEY_PRESS:
             key = call.data[CONF_REMOTE_KEY]
             await device.send_key_to_box(key)
@@ -121,18 +106,6 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         REMOTE_KEY_PRESS,
         key_schema,
-        handle_default_services,
-    )
-
-    message_schema = cv.make_entity_service_schema(
-        {
-            vol.Required(CONF_MESSAGE): cv.string,
-            vol.Optional(CONF_INTERRUPT_APP, default=False): cv.boolean,
-        }
-    )
-    platform.async_register_entity_service(
-        SEND_MESSAGE,
-        message_schema,
         handle_default_services,
     )
 

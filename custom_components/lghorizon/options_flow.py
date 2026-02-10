@@ -14,6 +14,8 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     SelectOptionDict,
 )
+import homeassistant.helpers.config_validation as cv
+
 from lghorizon import LGHorizonApi, LGHorizonAuth
 
 from .const import (
@@ -22,6 +24,7 @@ from .const import (
     CONF_EXCLUDED_CHANNELS,
     CONF_PROFILE_ID,
     CONF_REFRESH_TOKEN,
+    CONF_INTERRUPT_APP,
 )
 
 
@@ -41,7 +44,9 @@ class OptionsFlowHandler(OptionsFlowWithReload):
             self.config_entry.data[CONF_USERNAME],
             self.config_entry.data[CONF_PASSWORD],
         )
-        api: LGHorizonApi = LGHorizonApi(auth, profile_id = self.config_entry.data[CONF_PROFILE_ID])
+        api: LGHorizonApi = LGHorizonApi(
+            auth, profile_id=self.config_entry.data[CONF_PROFILE_ID]
+        )
         await api.initialize()
         profile_id = self.config_entry.data[CONF_PROFILE_ID]
         channels = await api.get_profile_channels(profile_id)
@@ -54,14 +59,19 @@ class OptionsFlowHandler(OptionsFlowWithReload):
 
         OPTIONS_SCHEMA = vol.Schema(
             {
-                vol.Required(CONF_CHANNEL_SORT, default="number"): SelectSelector(
+                vol.Required(
+                    CONF_CHANNEL_SORT, default=self.config_entry.data[CONF_CHANNEL_SORT]
+                ): SelectSelector(
                     SelectSelectorConfig(
                         options=["number", "alpha"],
                         translation_key="channel_sort",
                         mode=SelectSelectorMode.DROPDOWN,
                     ),
                 ),
-                vol.Required(CONF_EXCLUDED_CHANNELS, default=[]): SelectSelector(
+                vol.Required(
+                    CONF_EXCLUDED_CHANNELS,
+                    default=self.config_entry.data[CONF_EXCLUDED_CHANNELS],
+                ): SelectSelector(
                     SelectSelectorConfig(
                         options=channel_selectors,
                         translation_key="excluded_channels",
@@ -69,6 +79,10 @@ class OptionsFlowHandler(OptionsFlowWithReload):
                         multiple=True,
                     ),
                 ),
+                vol.Optional(
+                    CONF_INTERRUPT_APP,
+                    default=self.config_entry.data[CONF_INTERRUPT_APP],
+                ): cv.boolean,
             }
         )
 
