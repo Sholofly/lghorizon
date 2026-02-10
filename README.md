@@ -1,6 +1,6 @@
 <!-- # LG Horizon Settop boxes (Ziggo, Telenet, Magenta, UPC, Virgin) -->
 
-# LG Horizon Settop boxes for Ziggo(NL), Magenta(AT), UPC(CH, PL), Virgin(GB, IE), Telenet(BE)
+# LG Horizon Settop boxes for Ziggo(NL), Telenet(BE), Virgin(GB, IE), Sunrise(CH)
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 <br><a href="https://www.buymeacoffee.com/sholofly" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-black.png" width="150px" height="35px" alt="Buy Me A Coffee" style="height: 35px !important;width: 150px !important;" ></a>
@@ -16,15 +16,13 @@ A media player component for Home Assistant that controls each LG Horizon Settop
 
 ## Supported countries and providers
 
-| Country       | Provider                | Box name                                                                                                                                                     | Confirmed working                                                                                           |
-| ------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| Netherlands   | Ziggo                   | [Mediabox Next](https://www.ziggo.nl/televisie/mediaboxen/mediabox-next#ziggo-tv), [Mediabox Next mini](https://www.ziggo.nl/televisie/mediaboxen/next-mini) | yes                                                                                                         |
-| Austria       | Magenta                 | [Entertain box 4K](https://www.magenta.at/entertain-box)                                                                                                     | yes                                                                                                         |
-| Switzerland   | UPC/Sunrise Switzerland | [Sunrise (IP)TV Box](https://www.sunrise.ch/en/internet-tv/tv-comparison/)                                                                                   | yes (For Sunrise users, use Mobile number as username. For former UPC users, use e-mailaddress as username) |
-| Ireland       | Virgin Media            | [360 box](https://www.virginmedia.ie/virgintv360support/)                                                                                                    | yes                                                                                                         |
-| Belgium       | Telenet                 | [Telenet TV-Box](https://www2.telenet.be/nl/klantenservice/ontdek-de-telenet-tv-box/)                                                                        | yes                                                                                                         |
-| Great Britain | Virgin Media            | [Virgin TV 360](https://www.virginmedia.com/shop/tv/virgin-tv-360)                                                                                           | yes                                                                                                         |
-| Poland        | UPC Poland              | [UPC TV Box](https://www.upc.pl/telewizja/poznaj/poznaj-nasza-telewizje/dekoder-4k/)                                                                         | yes                                                                                                         |
+| Country       | Provider     | Box name                                                                                                                                                     | Confirmed working                                                                                           |
+| ------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Netherlands   | Ziggo        | [Mediabox Next](https://www.ziggo.nl/televisie/mediaboxen/mediabox-next#ziggo-tv), [Mediabox Next mini](https://www.ziggo.nl/televisie/mediaboxen/next-mini) | yes                                                                                                         |
+| Switzerland   | Sunrise      | [Sunrise (IP)TV Box](https://www.sunrise.ch/en/internet-tv/tv-comparison/)                                                                                   | yes (For Sunrise users, use Mobile number as username. For former UPC users, use e-mailaddress as username) |
+| Ireland       | Virgin Media | [360 box](https://www.virginmedia.ie/virgintv360support/)                                                                                                    | yes                                                                                                         |
+| Belgium       | Telenet      | [Telenet TV-Box](https://www2.telenet.be/nl/klantenservice/ontdek-de-telenet-tv-box/)                                                                        | yes                                                                                                         |
+| Great Britain | Virgin Media | [Virgin TV 360](https://www.virginmedia.com/shop/tv/virgin-tv-360)                                                                                           | yes                                                                                                         |
 
 ## Prerequisites
 
