@@ -109,10 +109,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         api = LGHorizonApi(auth, profile_id=profile_id)
-
         await api.initialize()
     except LGHorizonApiUnauthorizedError:
-        entry.async_start_reauth()
+        entry.async_start_reauth(hass=hass)
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
