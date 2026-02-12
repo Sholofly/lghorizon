@@ -79,6 +79,50 @@ For integrations other than Ziggo a password is not used, instead, you need to s
 
 NOTE: The refresh token has an expiry period. For Ziggo it's two weeks. For other providers I just don't know. I expect the same but I'm not sure. The day before expiry a new refresh token will be retrieved automatically! If there's no activity with the access token (i.e you didn't use your box or HA was down for two weeks) within the expiry period, the integration will ask you to re-supply a refresh token.
 
+## Fetching the token using Tampermonkey
+
+[Bert Wynants](https://github.com/berteco3) (thank you!) provided a [TamperMonkey](https://www.tampermonkey.net/) script to retrieve the token in case your provider (i.e. Telenet) disabled the developer tools on their website.
+
+<details>
+<summary> The script provided by @berteco3</summary>
+
+```javascript
+(function () {
+  "use strict";
+  const KEY = "flutter._WEB_SECURE_STORAGE_refreshToken";
+
+  function getToken() {
+    try {
+      return localStorage.getItem(KEY);
+    } catch (e) {
+      console.error("[TM] localStorage error:", e);
+      return null;
+    }
+  }
+
+  function showConfirm() {
+    const token = getToken();
+    const msg = token
+      ? `flutter._WEB_SECURE_STORAGE_refreshToken:\n\n${token}\n\nPress OK to copy to clipboard`
+      : `flutter._WEB_SECURE_STORAGE_refreshToken not found.\n\nPress OK to retry`;
+
+    const ok = confirm(msg);
+
+    if (ok && token) {
+      navigator.clipboard
+        .writeText(token)
+        .then(() => console.log("[TM] Token copied to clipboard"))
+        .catch((err) => console.error("[TM] Clipboard error:", err));
+    }
+  }
+
+  // Delay to allow Flutter apps to finish initializing storage
+  setTimeout(showConfirm, 1200);
+})();
+```
+
+</details>
+
 ## Service to change channel
 
 ```yaml
