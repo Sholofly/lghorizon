@@ -42,7 +42,7 @@ class LGHorizonNotifyEntity(NotifyEntity):
         self._interrupt_app = config_entry.data.get(CONF_INTERRUPT_APP, False)
         unique_id = f"{box.device_id}_notify"
         self._attr_unique_id = unique_id
-        self._attr_supported_features = {}
+        self._attr_supported_features = 0
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, box.device_id)},
             name=box.device_friendly_name,
