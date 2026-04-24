@@ -61,12 +61,23 @@ _LOGGER = logging.getLogger(__name__)
 EPG_REFRESH_INTERVAL = 7200
 
 
-def _to_seconds(ts: float | None) -> float | None:
-    """Normalize a timestamp to seconds. Handles both seconds and milliseconds."""
+def _to_seconds(ts: float | None, now_ts: float) -> float | None:
+    """Normalize a timestamp to seconds.
+
+    Handles three cases:
+    - Already seconds (~1.7e9): return as-is
+    - Milliseconds (~1.7e12): divide by 1000
+    - Accidentally divided (~1.7e6): multiply by 1000
+    """
     if ts is None:
         return None
-    # Timestamps above 1e10 are in milliseconds (year 2286+ in seconds)
-    return ts / 1000 if ts > 1e10 else ts
+    if ts > 1e10:
+        # Milliseconds
+        return ts / 1000
+    if ts < now_ts / 100:
+        # Way too small — was divided by 1000 erroneously
+        return ts * 1000
+    return ts
 
 
 def _find_now_next(
@@ -84,8 +95,8 @@ def _find_now_next(
     current: LGHorizonEpgEvent | None = None
     next_event: LGHorizonEpgEvent | None = None
     for i, event in enumerate(events):
-        start = _to_seconds(event.start_time)
-        end = _to_seconds(event.end_time)
+        start = _to_seconds(event.start_time, now_ts)
+        end = _to_seconds(event.end_time, now_ts)
         if start is not None and end is not None and start <= now_ts < end:
             current = event
             if i + 1 < len(events):
@@ -268,8 +279,8 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                     current.start_time,
                     current.end_time,
                 )
-                start_s = _to_seconds(current.start_time)
-                end_s = _to_seconds(current.end_time)
+                start_s = _to_seconds(current.start_time, now_ts)
+                end_s = _to_seconds(current.end_time, now_ts)
                 attrs["epg_now_title"] = current.title
                 attrs["epg_now_start"] = (
                     dt_util.utc_from_timestamp(start_s).isoformat()
@@ -302,7 +313,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                     last.end_time,
                 )
             if next_prog:
-                next_start_s = _to_seconds(next_prog.start_time)
+                next_start_s = _to_seconds(next_prog.start_time, now_ts)
                 attrs["epg_next_title"] = next_prog.title
                 attrs["epg_next_start"] = (
                     dt_util.utc_from_timestamp(next_start_s).isoformat()
