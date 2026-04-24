@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,11 +31,21 @@ jobs:
             custom_components/lghorizon/manifest.json > tmp.json \
             && mv tmp.json custom_components/lghorizon/manifest.json
 
-      - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add custom_components/lghorizon/manifest.json
-          git diff --cached --quiet && echo "No changes" && exit 0
-          git commit -m "Bump manifest version to ${{ steps.version.outputs.version }}"
-          git push origin dev
+      - name: Create pull request
+        id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Bump manifest version to ${{ steps.version.outputs.version }}"
+          branch: auto/bump-version-${{ steps.version.outputs.version }}
+          base: dev
+          title: "Bump manifest version to ${{ steps.version.outputs.version }}"
+          body: |
+            Automated version bump triggered by release `${{ github.event.release.tag_name }}`.
+          delete-branch: true
+
+      - name: Enable auto-merge
+        if: steps.pr.outputs.pull-request-number
+        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
