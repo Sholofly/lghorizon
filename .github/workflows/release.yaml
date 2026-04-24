@@ -1,51 +1,45 @@
-name: Update manifest version on release
+name: Create release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (e.g. 0.10.1)"
+        required: true
+        type: string
 
 jobs:
-  update-version:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: dev
 
-      - name: Extract version from tag
-        id: version
-        run: |
-          VERSION="${{ github.event.release.tag_name }}"
-          # Strip 'v' prefix if present (v1.2.3 -> 1.2.3)
-          VERSION="${VERSION#v}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Update manifest.json
         run: |
-          jq --arg v "${{ steps.version.outputs.version }}" \
+          jq --arg v "${{ inputs.version }}" \
             '.version = $v' \
             custom_components/lghorizon/manifest.json > tmp.json \
             && mv tmp.json custom_components/lghorizon/manifest.json
 
-      - name: Create pull request
-        id: pr
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Bump manifest version to ${{ steps.version.outputs.version }}"
-          branch: auto/bump-version-${{ steps.version.outputs.version }}
-          base: dev
-          title: "Bump manifest version to ${{ steps.version.outputs.version }}"
-          body: |
-            Automated version bump triggered by release `${{ github.event.release.tag_name }}`.
-          delete-branch: true
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add custom_components/lghorizon/manifest.json
+          git diff --cached --quiet && echo "No changes needed" && exit 0
+          git commit -m "Bump manifest version to ${{ inputs.version }}"
+          git push origin dev
 
-      - name: Enable auto-merge
-        if: steps.pr.outputs.pull-request-number
-        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --squash
+      - name: Create tag and release
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --target dev \
+            --title "v${{ inputs.version }}" \
+            --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
