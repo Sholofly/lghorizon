@@ -1,4 +1,4 @@
-name: Create release
+name: Prepare release
 
 on:
   workflow_dispatch:
@@ -9,10 +9,11 @@ on:
         type: string
 
 jobs:
-  release:
+  bump-version:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,20 +27,22 @@ jobs:
             custom_components/lghorizon/manifest.json > tmp.json \
             && mv tmp.json custom_components/lghorizon/manifest.json
 
-      - name: Commit version bump
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add custom_components/lghorizon/manifest.json
-          git diff --cached --quiet && echo "No changes needed" && exit 0
-          git commit -m "Bump manifest version to ${{ inputs.version }}"
-          git push origin dev
+      - name: Create pull request
+        id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Bump manifest version to ${{ inputs.version }}"
+          branch: auto/release-${{ inputs.version }}
+          base: dev
+          title: "Release v${{ inputs.version }}"
+          body: |
+            Automated version bump to `${{ inputs.version }}`.
+            Merging this PR will create the GitHub release automatically.
+          delete-branch: true
 
-      - name: Create tag and release
-        run: |
-          gh release create "v${{ inputs.version }}" \
-            --target dev \
-            --title "v${{ inputs.version }}" \
-            --generate-notes
+      - name: Enable auto-merge
+        if: steps.pr.outputs.pull-request-number
+        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --squash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
