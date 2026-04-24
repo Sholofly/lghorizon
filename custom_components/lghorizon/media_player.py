@@ -61,6 +61,14 @@ _LOGGER = logging.getLogger(__name__)
 EPG_REFRESH_INTERVAL = 7200
 
 
+def _to_seconds(ts: float | None) -> float | None:
+    """Normalize a timestamp to seconds. Handles both seconds and milliseconds."""
+    if ts is None:
+        return None
+    # Timestamps above 1e10 are in milliseconds (year 2286+ in seconds)
+    return ts / 1000 if ts > 1e10 else ts
+
+
 def _find_now_next(
     events: list[LGHorizonEpgEvent], now_ts: float
 ) -> tuple[LGHorizonEpgEvent | None, LGHorizonEpgEvent | None]:
@@ -76,8 +84,8 @@ def _find_now_next(
     current: LGHorizonEpgEvent | None = None
     next_event: LGHorizonEpgEvent | None = None
     for i, event in enumerate(events):
-        start = event.start_time
-        end = event.end_time
+        start = _to_seconds(event.start_time)
+        end = _to_seconds(event.end_time)
         if start is not None and end is not None and start <= now_ts < end:
             current = event
             if i + 1 < len(events):
@@ -260,22 +268,24 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                     current.start_time,
                     current.end_time,
                 )
+                start_s = _to_seconds(current.start_time)
+                end_s = _to_seconds(current.end_time)
                 attrs["epg_now_title"] = current.title
                 attrs["epg_now_start"] = (
-                    dt_util.utc_from_timestamp(current.start_time).isoformat()
-                    if current.start_time
+                    dt_util.utc_from_timestamp(start_s).isoformat()
+                    if start_s
                     else None
                 )
                 attrs["epg_now_end"] = (
-                    dt_util.utc_from_timestamp(current.end_time).isoformat()
-                    if current.end_time
+                    dt_util.utc_from_timestamp(end_s).isoformat()
+                    if end_s
                     else None
                 )
                 # Progress as percentage
-                if current.start_time and current.end_time:
-                    duration = current.end_time - current.start_time
+                if start_s and end_s:
+                    duration = end_s - start_s
                     if duration > 0:
-                        elapsed = now_ts - current.start_time
+                        elapsed = now_ts - start_s
                         attrs["epg_now_progress"] = round(
                             min(elapsed / duration * 100, 100), 1
                         )
@@ -292,10 +302,11 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                     last.end_time,
                 )
             if next_prog:
+                next_start_s = _to_seconds(next_prog.start_time)
                 attrs["epg_next_title"] = next_prog.title
                 attrs["epg_next_start"] = (
-                    dt_util.utc_from_timestamp(next_prog.start_time).isoformat()
-                    if next_prog.start_time
+                    dt_util.utc_from_timestamp(next_start_s).isoformat()
+                    if next_start_s
                     else None
                 )
 
