@@ -4,6 +4,7 @@ import asyncio
 import datetime as dt
 import logging
 import random
+import time
 from typing import cast
 
 
@@ -26,6 +27,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 from lghorizon import (
     LGHorizonDevice,
+    LGHorizonEpg,
+    LGHorizonEpgEvent,
     LGHorizonRecording,
     LGHorizonRecordingList,
     LGHorizonRecordingSeason,
@@ -53,6 +56,34 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Refresh the EPG cache every 2 hours (segments are 6h each)
+EPG_REFRESH_INTERVAL = 7200
+
+
+def _find_now_next(
+    events: list[LGHorizonEpgEvent], now_ts: float
+) -> tuple[LGHorizonEpgEvent | None, LGHorizonEpgEvent | None]:
+    """Find the currently airing and next program from a list of EPG events.
+
+    Args:
+        events: Sorted list of EPG events for a channel.
+        now_ts: Current Unix timestamp in seconds.
+
+    Returns:
+        Tuple of (current_event, next_event). Either may be None.
+    """
+    current: LGHorizonEpgEvent | None = None
+    next_event: LGHorizonEpgEvent | None = None
+    for i, event in enumerate(events):
+        start = event.start_time
+        end = event.end_time
+        if start is not None and end is not None and start <= now_ts < end:
+            current = event
+            if i + 1 < len(events):
+                next_event = events[i + 1]
+            break
+    return current, next_event
 
 
 async def async_setup_entry(
@@ -128,6 +159,8 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         self.hass = hass
         self.entry = entry
         self._channels = {}
+        self._epg: LGHorizonEpg | None = None
+        self._epg_fetched_at: float = 0
 
     @property
     def unique_id(self):
@@ -188,12 +221,48 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def extra_state_attributes(self):
         """Return device specific state attributes."""
-        return {
+        attrs = {
             "ui_mode": self._device.device_state.ui_state_type,
             "play_mode": self._device.device_state.source_type,
             "channel": self._device.device_state.channel_name,
             "recording_capacity": self._device.recording_capacity,
         }
+
+        # EPG now/next
+        channel_id = self._device.device_state.channel_id
+        if self._epg and channel_id:
+            now_ts = time.time()
+            events = self._epg.get_channel_events(channel_id)
+            current, next_prog = _find_now_next(events, now_ts)
+            if current:
+                attrs["epg_now_title"] = current.title
+                attrs["epg_now_start"] = (
+                    dt_util.utc_from_timestamp(current.start_time).isoformat()
+                    if current.start_time
+                    else None
+                )
+                attrs["epg_now_end"] = (
+                    dt_util.utc_from_timestamp(current.end_time).isoformat()
+                    if current.end_time
+                    else None
+                )
+                # Progress as percentage
+                if current.start_time and current.end_time:
+                    duration = current.end_time - current.start_time
+                    if duration > 0:
+                        elapsed = now_ts - current.start_time
+                        attrs["epg_now_progress"] = round(
+                            min(elapsed / duration * 100, 100), 1
+                        )
+            if next_prog:
+                attrs["epg_next_title"] = next_prog.title
+                attrs["epg_next_start"] = (
+                    dt_util.utc_from_timestamp(next_prog.start_time).isoformat()
+                    if next_prog.start_time
+                    else None
+                )
+
+        return attrs
 
     @property
     def should_poll(self):
@@ -367,9 +436,22 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
         await self._device.set_callback(state_callback)
         self._channels = await self.api.get_profile_channels()
+        await self._refresh_epg()
+
+    async def _refresh_epg(self):
+        """Fetch or refresh the EPG cache if stale."""
+        now = time.time()
+        if now - self._epg_fetched_at < EPG_REFRESH_INTERVAL:
+            return
+        try:
+            self._epg = await self.api.get_epg()
+            self._epg_fetched_at = now
+        except Exception:
+            _LOGGER.debug("Failed to refresh EPG data", exc_info=True)
 
     async def async_update(self):
         """Update the box."""
+        await self._refresh_epg()
 
     async def async_turn_on(self):
         """Turn the media player on."""
