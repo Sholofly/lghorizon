@@ -61,25 +61,6 @@ _LOGGER = logging.getLogger(__name__)
 EPG_REFRESH_INTERVAL = 7200
 
 
-def _to_seconds(ts: float | None, now_ts: float) -> float | None:
-    """Normalize a timestamp to seconds.
-
-    Handles three cases:
-    - Already seconds (~1.7e9): return as-is
-    - Milliseconds (~1.7e12): divide by 1000
-    - Accidentally divided (~1.7e6): multiply by 1000
-    """
-    if ts is None:
-        return None
-    if ts > 1e10:
-        # Milliseconds
-        return ts / 1000
-    if ts < now_ts / 100:
-        # Way too small — was divided by 1000 erroneously
-        return ts * 1000
-    return ts
-
-
 def _find_now_next(
     events: list[LGHorizonEpgEvent], now_ts: float
 ) -> tuple[LGHorizonEpgEvent | None, LGHorizonEpgEvent | None]:
@@ -92,17 +73,12 @@ def _find_now_next(
     Returns:
         Tuple of (current_event, next_event). Either may be None.
     """
-    current: LGHorizonEpgEvent | None = None
-    next_event: LGHorizonEpgEvent | None = None
     for i, event in enumerate(events):
-        start = _to_seconds(event.start_time, now_ts)
-        end = _to_seconds(event.end_time, now_ts)
-        if start is not None and end is not None and start <= now_ts < end:
-            current = event
-            if i + 1 < len(events):
-                next_event = events[i + 1]
-            break
-    return current, next_event
+        if event.start_time is not None and event.end_time is not None:
+            if event.start_time <= now_ts < event.end_time:
+                next_event = events[i + 1] if i + 1 < len(events) else None
+                return event, next_event
+    return None, None
 
 
 async def async_setup_entry(
@@ -178,8 +154,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         self.hass = hass
         self.entry = entry
         self._channels = {}
-        self._epg: LGHorizonEpg | None = None
-        self._epg_fetched_at: float = 0
 
     @property
     def unique_id(self):
@@ -252,76 +226,51 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         if self._epg and channel_id:
             now_ts = time.time()
             events = self._epg.get_channel_events(channel_id)
-            _LOGGER.debug(
-                "EPG lookup: channel_id=%s, events=%d, now_ts=%.0f",
-                channel_id,
-                len(events),
-                now_ts,
-            )
-            if events:
-                first = events[0]
-                _LOGGER.debug(
-                    "EPG first event: title='%s', start=%s, end=%s, type_start=%s",
-                    first.title,
-                    first.start_time,
-                    first.end_time,
-                    type(first.start_time).__name__,
-                )
             try:
                 current, next_prog = _find_now_next(events, now_ts)
-            except Exception:
+            except (TypeError, ValueError):
                 _LOGGER.exception("EPG _find_now_next failed")
                 current, next_prog = None, None
             if current:
-                _LOGGER.debug(
-                    "EPG match: '%s' (%s - %s)",
-                    current.title,
-                    current.start_time,
-                    current.end_time,
-                )
-                start_s = _to_seconds(current.start_time, now_ts)
-                end_s = _to_seconds(current.end_time, now_ts)
                 attrs["epg_now_title"] = current.title
                 attrs["epg_now_start"] = (
-                    dt_util.utc_from_timestamp(start_s).isoformat()
-                    if start_s
+                    dt_util.utc_from_timestamp(current.start_time).isoformat()
+                    if current.start_time
                     else None
                 )
                 attrs["epg_now_end"] = (
-                    dt_util.utc_from_timestamp(end_s).isoformat()
-                    if end_s
+                    dt_util.utc_from_timestamp(current.end_time).isoformat()
+                    if current.end_time
                     else None
                 )
                 # Progress as percentage
-                if start_s and end_s:
-                    duration = end_s - start_s
+                if current.start_time and current.end_time:
+                    duration = current.end_time - current.start_time
                     if duration > 0:
-                        elapsed = now_ts - start_s
+                        elapsed = now_ts - current.start_time
                         attrs["epg_now_progress"] = round(
-                            min(elapsed / duration * 100, 100), 1
+                            max(0, min(elapsed / duration * 100, 100)), 1
                         )
             if not current and events:
-                # Log first event timestamps to diagnose mismatch
-                first = events[0]
-                last = events[-1]
                 _LOGGER.debug(
-                    "EPG no match: now_ts=%.0f, first_event=%s-%s, last_event=%s-%s",
+                    "EPG no match for channel_id=%s at now_ts=%.0f",
+                    channel_id,
                     now_ts,
-                    first.start_time,
-                    first.end_time,
-                    last.start_time,
-                    last.end_time,
                 )
             if next_prog:
-                next_start_s = _to_seconds(next_prog.start_time, now_ts)
                 attrs["epg_next_title"] = next_prog.title
                 attrs["epg_next_start"] = (
-                    dt_util.utc_from_timestamp(next_start_s).isoformat()
-                    if next_start_s
+                    dt_util.utc_from_timestamp(next_prog.start_time).isoformat()
+                    if next_prog.start_time
                     else None
                 )
 
         return attrs
+
+    @property
+    def _epg(self) -> LGHorizonEpg | None:
+        """Return the shared EPG cache."""
+        return self.hass.data[DOMAIN][self.entry.entry_id].get("epg")
 
     @property
     def should_poll(self):
@@ -498,16 +447,17 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         await self._refresh_epg()
 
     async def _refresh_epg(self):
-        """Fetch or refresh the EPG cache if stale."""
+        """Fetch or refresh the shared EPG cache if stale."""
+        store = self.hass.data[DOMAIN][self.entry.entry_id]
         now = time.time()
-        if now - self._epg_fetched_at < EPG_REFRESH_INTERVAL:
+        if now - store.get("epg_fetched_at", 0) < EPG_REFRESH_INTERVAL:
             return
         try:
-            self._epg = await self.api.get_epg()
-            self._epg_fetched_at = now
+            store["epg"] = await self.api.get_epg()
+            store["epg_fetched_at"] = now
             _LOGGER.debug(
                 "EPG refreshed: %d channels loaded",
-                len(self._epg.entries) if self._epg else 0,
+                len(store["epg"].entries) if store["epg"] else 0,
             )
         except Exception:
             _LOGGER.warning("Failed to refresh EPG data", exc_info=True)
