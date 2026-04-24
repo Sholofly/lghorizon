@@ -239,7 +239,20 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 len(events),
                 now_ts,
             )
-            current, next_prog = _find_now_next(events, now_ts)
+            if events:
+                first = events[0]
+                _LOGGER.debug(
+                    "EPG first event: title='%s', start=%s, end=%s, type_start=%s",
+                    first.title,
+                    first.start_time,
+                    first.end_time,
+                    type(first.start_time).__name__,
+                )
+            try:
+                current, next_prog = _find_now_next(events, now_ts)
+            except Exception:
+                _LOGGER.exception("EPG _find_now_next failed")
+                current, next_prog = None, None
             if current:
                 _LOGGER.debug(
                     "EPG match: '%s' (%s - %s)",
