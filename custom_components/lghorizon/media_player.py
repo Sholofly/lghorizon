@@ -233,6 +233,12 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         if self._epg and channel_id:
             now_ts = time.time()
             events = self._epg.get_channel_events(channel_id)
+            _LOGGER.debug(
+                "EPG lookup: channel_id=%s, events=%d, now_ts=%.0f",
+                channel_id,
+                len(events),
+                now_ts,
+            )
             current, next_prog = _find_now_next(events, now_ts)
             if current:
                 attrs["epg_now_title"] = current.title
@@ -446,8 +452,12 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         try:
             self._epg = await self.api.get_epg()
             self._epg_fetched_at = now
+            _LOGGER.debug(
+                "EPG refreshed: %d channels loaded",
+                len(self._epg.entries) if self._epg else 0,
+            )
         except Exception:
-            _LOGGER.debug("Failed to refresh EPG data", exc_info=True)
+            _LOGGER.warning("Failed to refresh EPG data", exc_info=True)
 
     async def async_update(self):
         """Update the box."""
