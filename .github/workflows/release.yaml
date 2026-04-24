@@ -1,0 +1,40 @@
+name: Update manifest version on release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          # Strip 'v' prefix if present (v1.2.3 -> 1.2.3)
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update manifest.json
+        run: |
+          jq --arg v "${{ steps.version.outputs.version }}" \
+            '.version = $v' \
+            custom_components/lghorizon/manifest.json > tmp.json \
+            && mv tmp.json custom_components/lghorizon/manifest.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add custom_components/lghorizon/manifest.json
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Bump manifest version to ${{ steps.version.outputs.version }}"
+          git push origin dev
