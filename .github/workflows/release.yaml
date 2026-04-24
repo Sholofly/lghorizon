@@ -31,7 +31,7 @@ jobs:
         id: pr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
           commit-message: "Bump manifest version to ${{ inputs.version }}"
           branch: auto/release-${{ inputs.version }}
           base: dev
