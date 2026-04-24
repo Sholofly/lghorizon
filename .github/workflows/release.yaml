@@ -46,6 +46,6 @@ jobs:
 
       - name: Enable auto-merge
         if: steps.pr.outputs.pull-request-number
-        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --merge
+        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --squash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
