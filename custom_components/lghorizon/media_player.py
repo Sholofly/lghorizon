@@ -241,6 +241,12 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             )
             current, next_prog = _find_now_next(events, now_ts)
             if current:
+                _LOGGER.debug(
+                    "EPG match: '%s' (%s - %s)",
+                    current.title,
+                    current.start_time,
+                    current.end_time,
+                )
                 attrs["epg_now_title"] = current.title
                 attrs["epg_now_start"] = (
                     dt_util.utc_from_timestamp(current.start_time).isoformat()
@@ -260,6 +266,18 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         attrs["epg_now_progress"] = round(
                             min(elapsed / duration * 100, 100), 1
                         )
+            if not current and events:
+                # Log first event timestamps to diagnose mismatch
+                first = events[0]
+                last = events[-1]
+                _LOGGER.debug(
+                    "EPG no match: now_ts=%.0f, first_event=%s-%s, last_event=%s-%s",
+                    now_ts,
+                    first.start_time,
+                    first.end_time,
+                    last.start_time,
+                    last.end_time,
+                )
             if next_prog:
                 attrs["epg_next_title"] = next_prog.title
                 attrs["epg_next_start"] = (
