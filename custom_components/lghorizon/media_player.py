@@ -29,6 +29,7 @@ from lghorizon import (
     LGHorizonDevice,
     LGHorizonEpg,
     LGHorizonEpgEvent,
+    LGHorizonEventDetail,
     LGHorizonRecording,
     LGHorizonRecordingList,
     LGHorizonRecordingSeason,
@@ -154,6 +155,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         self.hass = hass
         self.entry = entry
         self._channels = {}
+        self._current_event_detail: LGHorizonEventDetail | None = None
 
     @property
     def unique_id(self):
@@ -251,6 +253,19 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         attrs["epg_now_progress"] = round(
                             max(0, min(elapsed / duration * 100, 100)), 1
                         )
+                # Event detail enrichment
+                detail = self._current_event_detail
+                if detail and detail.event_id == current.event_id:
+                    if detail.description:
+                        attrs["epg_now_description"] = detail.description
+                    if detail.genres:
+                        attrs["epg_now_genres"] = ", ".join(detail.genres)
+                    if detail.episode_name:
+                        attrs["epg_now_episode_name"] = detail.episode_name
+                    if detail.actors:
+                        attrs["epg_now_actors"] = ", ".join(detail.actors)
+                    if detail.directors:
+                        attrs["epg_now_directors"] = ", ".join(detail.directors)
             if not current and events:
                 _LOGGER.debug(
                     "EPG no match for channel_id=%s at now_ts=%.0f",
@@ -465,6 +480,36 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     async def async_update(self):
         """Update the box."""
         await self._refresh_epg()
+        # Pre-fetch event detail for current program
+        channel_id = self._device.device_state.channel_id
+        if self._epg and channel_id:
+            events = self._epg.get_channel_events(channel_id)
+            try:
+                current, _ = _find_now_next(events, time.time())
+            except (TypeError, ValueError):
+                current = None
+            if current and current.event_id:
+                self._current_event_detail = await self._get_event_detail(current.event_id)
+            else:
+                self._current_event_detail = None
+        else:
+            self._current_event_detail = None
+
+    async def _get_event_detail(self, event_id: str) -> LGHorizonEventDetail | None:
+        """Fetch event detail with caching."""
+        store = self.hass.data[DOMAIN][self.entry.entry_id]
+        cache: dict = store.setdefault("event_detail_cache", {})
+        if event_id in cache:
+            return cache[event_id]
+        try:
+            detail = await self.api.get_event_detail(event_id)
+            if len(cache) > 10:
+                cache.clear()
+            cache[event_id] = detail
+            return detail
+        except Exception:
+            _LOGGER.warning("Failed to fetch event detail for %s", event_id, exc_info=True)
+            return None
 
     async def async_turn_on(self):
         """Turn the media player on."""
