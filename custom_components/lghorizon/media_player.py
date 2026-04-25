@@ -36,6 +36,7 @@ from lghorizon import (
     LGHorizonRecordingShow,
     LGHorizonRecordingSingle,
     LGHorizonRecordingType,
+    LGHorizonReplayChannel,
     LGHorizonRunningState,
     LGHorizonShowRecordingList,
     LGHorizonUIStateType,
@@ -223,8 +224,13 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "recording_capacity": self._device.recording_capacity,
         }
 
-        # EPG now/next
+        # Replay support for current channel
         channel_id = self._device.device_state.channel_id
+        replay_ids = self.hass.data[DOMAIN][self.entry.entry_id].get("replay_channel_ids", set())
+        if channel_id:
+            attrs["replay_supported"] = channel_id in replay_ids
+
+        # EPG now/next
         if self._epg and channel_id:
             now_ts = time.time()
             events = self._epg.get_channel_events(channel_id)
@@ -460,6 +466,23 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         await self._device.set_callback(state_callback)
         self._channels = await self.api.get_profile_channels()
         await self._refresh_epg()
+        await self._refresh_replay_channels()
+
+    async def _refresh_replay_channels(self):
+        """Fetch replay channel IDs once."""
+        store = self.hass.data[DOMAIN][self.entry.entry_id]
+        if "replay_channel_ids" in store:
+            return
+        try:
+            channels = await self.api.get_replay_channels()
+            store["replay_channel_ids"] = {ch.id for ch in channels}
+            _LOGGER.debug(
+                "Replay channels loaded: %d channels support replay",
+                len(store["replay_channel_ids"]),
+            )
+        except Exception:
+            _LOGGER.warning("Failed to fetch replay channels", exc_info=True)
+            store["replay_channel_ids"] = set()
 
     async def _refresh_epg(self):
         """Fetch or refresh the shared EPG cache if stale."""
