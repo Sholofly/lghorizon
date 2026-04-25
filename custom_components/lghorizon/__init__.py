@@ -7,10 +7,11 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from lghorizon import LGHorizonApi, LGHorizonAuth, COUNTRY_SETTINGS
-from lghorizon import LGHorizonApiUnauthorizedError
+from lghorizon import LGHorizonApiUnauthorizedError, LGHorizonApiConnectionError
 
 from .const import (
     API,
@@ -110,8 +111,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         api = LGHorizonApi(auth, profile_id=profile_id)
         await api.initialize()
-    except LGHorizonApiUnauthorizedError:
-        entry.async_start_reauth(hass=hass)
+    except LGHorizonApiUnauthorizedError as err:
+        raise ConfigEntryAuthFailed("Authentication failed, reauthentication required") from err
+    except LGHorizonApiConnectionError as err:
+        if "unauthorized" in str(err).lower() or "invalid token" in str(err).lower() or "refresh token" in str(err).lower():
+            raise ConfigEntryAuthFailed("Token expired, reauthentication required") from err
+        raise
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
