@@ -1,4 +1,4 @@
-name: Prepare release
+name: Create release
 
 on:
   workflow_dispatch:
@@ -9,16 +9,14 @@ on:
         type: string
 
 jobs:
-  bump-version:
+  release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: dev
+          token: ${{ secrets.PAT }}
 
       - name: Update manifest.json
         run: |
@@ -27,22 +25,20 @@ jobs:
             custom_components/lghorizon/manifest.json > tmp.json \
             && mv tmp.json custom_components/lghorizon/manifest.json
 
-      - name: Create pull request
-        id: pr
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.PAT }}
-          commit-message: "Bump manifest version to ${{ inputs.version }}"
-          branch: auto/release-${{ inputs.version }}
-          base: dev
-          title: "Release v${{ inputs.version }}"
-          body: |
-            Automated version bump to `${{ inputs.version }}`.
-            Merging this PR will create the GitHub release automatically.
-          delete-branch: true
+      - name: Commit and push version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add custom_components/lghorizon/manifest.json
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Bump manifest version to ${{ inputs.version }}"
+          git push origin dev
 
-      - name: Enable auto-merge
-        if: steps.pr.outputs.pull-request-number
-        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --squash
+      - name: Create GitHub release
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --target dev \
+            --title "v${{ inputs.version }}" \
+            --generate-notes
         env:
           GH_TOKEN: ${{ secrets.PAT }}
