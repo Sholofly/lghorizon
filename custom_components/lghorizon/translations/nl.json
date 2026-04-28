@@ -127,6 +127,16 @@
           "description": "Mag er een bericht worden afgespeeld terwijl een app actief is? Let op: dit sluit de app af."
         }
       }
+    },
+    "skip_ad_break": {
+      "name": "Reclame overslaan",
+      "description": "Sla het huidige reclameblok over tijdens het afspelen van een opname.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity Id",
+          "description": "Entiteit ID van je mediabox."
+        }
+      }
     }
   }
 }

@@ -56,6 +56,7 @@ from .const import (
     RECORD,
     REMOTE_KEY_PRESS,
     REWIND,
+    SKIP_AD_BREAK,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -113,6 +114,8 @@ async def async_setup_entry(
         elif call.service == REMOTE_KEY_PRESS:
             key = call.data[CONF_REMOTE_KEY]
             await device.send_key_to_box(key)
+        elif call.service == SKIP_AD_BREAK:
+            await device.skip_ad_break()
 
     platform.async_register_entity_service(
         RECORD,
@@ -135,6 +138,11 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         REMOTE_KEY_PRESS,
         key_schema,
+        handle_default_services,
+    )
+    platform.async_register_entity_service(
+        SKIP_AD_BREAK,
+        default_service_schema,
         handle_default_services,
     )
 
@@ -224,6 +232,16 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "channel": self._device.device_state.channel_name,
             "recording_capacity": self._device.recording_capacity,
         }
+
+        # Ad break info
+        ad_break = self._device.get_current_ad_break()
+        if ad_break:
+            attrs["ad_break_active"] = True
+            attrs["ad_break_end_position"] = ad_break.end_s
+        else:
+            attrs["ad_break_active"] = False
+        if self._device.device_state.ad_breaks:
+            attrs["ad_break_count"] = len(self._device.device_state.ad_breaks)
 
         # Replay support for current channel
         channel_id = self._device.device_state.channel_id

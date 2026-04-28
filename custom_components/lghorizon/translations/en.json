@@ -127,6 +127,16 @@
           "description": "May a message be played while an app is running? Note: This will cause the app to close."
         }
       }
+    },
+    "skip_ad_break": {
+      "name": "Skip ad break",
+      "description": "Skip to the end of the current ad break during nDVR playback.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity Id",
+          "description": "Id of your media box."
+        }
+      }
     }
   }
 }
