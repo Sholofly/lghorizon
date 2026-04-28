@@ -549,7 +549,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             self._ad_break_checker()
             self._ad_break_checker = None
 
-    def _check_ad_break(self, _now) -> None:
+    async def _check_ad_break(self, _now) -> None:
         """Called every second to detect ad break transitions."""
         currently_in = self._is_in_ad_break()
         if currently_in != self._ad_break_active:
