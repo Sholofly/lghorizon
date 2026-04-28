@@ -494,6 +494,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
         async def state_callback(box_id):
             self._update_ad_break_checker()
+            self._ad_break_active = self._is_in_ad_break()
             self.schedule_update_ha_state(True)
 
         await self._device.set_callback(state_callback)
