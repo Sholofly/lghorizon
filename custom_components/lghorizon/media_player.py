@@ -21,10 +21,9 @@ from homeassistant.components.media_player import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt as dt_util
 from lghorizon import (
     LGHorizonDevice,
@@ -167,7 +166,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         self.entry = entry
         self._channels = {}
         self._current_event_detail: LGHorizonEventDetail | None = None
-        self._ad_break_timers: list[CALLBACK_TYPE] = []
 
     @property
     def unique_id(self):
@@ -494,7 +492,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         """Use lifecycle hooks."""
 
         async def state_callback(box_id):
-            self._schedule_ad_break_timers()
             self.schedule_update_ha_state(True)
 
         await self._device.set_callback(state_callback)
@@ -512,46 +509,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         if speed == 0:
             return ds.position
         return ds.position + (elapsed * speed)
-
-    def _cancel_ad_break_timers(self) -> None:
-        """Cancel all pending ad break boundary timers."""
-        for cancel in self._ad_break_timers:
-            cancel()
-        self._ad_break_timers = []
-
-    def _schedule_ad_break_timers(self) -> None:
-        """Schedule timers at ad break boundaries for real-time attribute updates."""
-        self._cancel_ad_break_timers()
-
-        ds = self._device.device_state
-        if not ds.ad_breaks or ds.position is None or ds.last_position_update is None:
-            return
-        speed = ds.speed if ds.speed is not None else 1
-        if speed <= 0:
-            return
-
-        current_pos_s = self._get_realtime_position()
-        if current_pos_s is None:
-            return
-
-        def _make_timer_callback(boundary_name):
-            """Create a callback that triggers a state write."""
-            def _fire(_now):
-                self.async_write_ha_state()
-            return _fire
-
-        for ab in ds.ad_breaks:
-            for boundary_s in (ab.start_s, ab.end_s):
-                delay = (boundary_s - current_pos_s) / speed
-                if 0 < delay < 7200:  # Only schedule within 2 hours
-                    cancel = async_call_later(
-                        self.hass, delay, _make_timer_callback(boundary_s)
-                    )
-                    self._ad_break_timers.append(cancel)
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Clean up timers when entity is removed."""
-        self._cancel_ad_break_timers()
 
     async def _refresh_replay_channels(self):
         """Fetch replay channel IDs once."""
