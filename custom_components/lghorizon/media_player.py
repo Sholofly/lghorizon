@@ -21,9 +21,10 @@ from homeassistant.components.media_player import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 from lghorizon import (
     LGHorizonDevice,
@@ -56,6 +57,7 @@ from .const import (
     RECORD,
     REMOTE_KEY_PRESS,
     REWIND,
+    SKIP_AD_BREAK,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -113,6 +115,8 @@ async def async_setup_entry(
         elif call.service == REMOTE_KEY_PRESS:
             key = call.data[CONF_REMOTE_KEY]
             await device.send_key_to_box(key)
+        elif call.service == SKIP_AD_BREAK:
+            await device.skip_ad_break()
 
     platform.async_register_entity_service(
         RECORD,
@@ -137,6 +141,11 @@ async def async_setup_entry(
         key_schema,
         handle_default_services,
     )
+    platform.async_register_entity_service(
+        SKIP_AD_BREAK,
+        default_service_schema,
+        handle_default_services,
+    )
 
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
@@ -158,6 +167,8 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         self.entry = entry
         self._channels = {}
         self._current_event_detail: LGHorizonEventDetail | None = None
+        self._ad_break_checker: CALLBACK_TYPE | None = None
+        self._ad_break_active: bool = False
 
     @property
     def unique_id(self):
@@ -224,6 +235,26 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "channel": self._device.device_state.channel_name,
             "recording_capacity": self._device.recording_capacity,
         }
+
+        # Ad break info (real-time via 1-second checker)
+        ad_breaks = self._device.device_state.ad_breaks
+        if ad_breaks:
+            attrs["ad_break_active"] = self._ad_break_active
+            if self._ad_break_active:
+                current_pos_s = self._get_realtime_position()
+                if current_pos_s is not None:
+                    pos_ms = int(current_pos_s * 1000)
+                    for ab in ad_breaks:
+                        if ab.start_ms <= pos_ms < ab.end_ms:
+                            attrs["ad_break_end_position"] = ab.end_s
+                            break
+            attrs["ad_break_count"] = len(ad_breaks)
+            attrs["ad_breaks"] = [
+                {"start": ab.start_s, "end": ab.end_s}
+                for ab in ad_breaks
+            ]
+        else:
+            attrs["ad_break_active"] = False
 
         # Replay support for current channel
         channel_id = self._device.device_state.channel_id
@@ -462,12 +493,69 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         """Use lifecycle hooks."""
 
         async def state_callback(box_id):
+            self._update_ad_break_checker()
+            self._ad_break_active = self._is_in_ad_break()
             self.schedule_update_ha_state(True)
 
         await self._device.set_callback(state_callback)
         self._channels = await self.api.get_profile_channels()
         await self._refresh_epg()
         await self._refresh_replay_channels()
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Clean up when entity is removed."""
+        self._stop_ad_break_checker()
+
+    def _get_realtime_position(self) -> float | None:
+        """Calculate real-time playback position in seconds."""
+        ds = self._device.device_state
+        if ds.position is None or ds.last_position_update is None:
+            return None
+        elapsed = time.time() - ds.last_position_update
+        speed = ds.speed if ds.speed is not None else 1
+        if speed == 0:
+            return ds.position
+        return ds.position + (elapsed * speed)
+
+    def _is_in_ad_break(self) -> bool:
+        """Check if current real-time position is within an ad break."""
+        ds = self._device.device_state
+        if not ds.ad_breaks:
+            return False
+        current_pos_s = self._get_realtime_position()
+        if current_pos_s is None:
+            return False
+        pos_ms = int(current_pos_s * 1000)
+        return any(ab.start_ms <= pos_ms < ab.end_ms for ab in ds.ad_breaks)
+
+    def _update_ad_break_checker(self) -> None:
+        """Start or stop the 1-second ad break checker based on playback state."""
+        ds = self._device.device_state
+        needs_checker = (
+            ds.ad_breaks
+            and ds.source_type == LGHorizonSourceType.NDVR
+            and ds.speed is not None
+            and ds.speed > 0
+        )
+        if needs_checker and self._ad_break_checker is None:
+            self._ad_break_checker = async_track_time_interval(
+                self.hass, self._check_ad_break, dt.timedelta(seconds=1)
+            )
+        elif not needs_checker and self._ad_break_checker is not None:
+            self._stop_ad_break_checker()
+
+    def _stop_ad_break_checker(self) -> None:
+        """Stop the ad break checker interval."""
+        if self._ad_break_checker is not None:
+            self._ad_break_checker()
+            self._ad_break_checker = None
+
+    async def _check_ad_break(self, _now) -> None:
+        """Called every second to detect ad break transitions."""
+        currently_in = self._is_in_ad_break()
+        if currently_in != self._ad_break_active:
+            self._ad_break_active = currently_in
+            self.async_write_ha_state()
 
     async def _refresh_replay_channels(self):
         """Fetch replay channel IDs once."""

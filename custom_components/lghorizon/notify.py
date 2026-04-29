@@ -63,5 +63,5 @@ class LGHorizonNotifyEntity(NotifyEntity):
                 f"Message to box {self._box.device_friendly_name} suppressed. It's playing an app and interrupt app setting is 'False'."
             )
             return
-        await self._box.display_message(message, self._box.device_state.source_type)
+        await self._box.display_message(self._box.device_state.source_type.value, message)
         _LOGGER.debug(f"Message sent to box {self._box.device_friendly_name}.")
