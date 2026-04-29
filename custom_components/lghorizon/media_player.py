@@ -703,32 +703,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
     async def async_browse_media(self, media_content_type=None, media_content_id=None):
         """Support browsing media."""
-        if media_content_type in [None, "main"]:
-            root = BrowseMedia(
-                title="Media",
-                media_class=MediaClass.DIRECTORY,
-                media_content_type="main",
-                media_content_id="main",
-                can_play=False,
-                can_expand=True,
-                children=[],
-                children_media_class=MediaClass.DIRECTORY,
-            )
-            # Folder: Opnames (recorded)
-            root.children.append(
-                BrowseMedia(
-                    title="Opnames",
-                    media_class=MediaClass.DIRECTORY,
-                    media_content_type="recordings",
-                    media_content_id="recordings",
-                    can_play=False,
-                    can_expand=True,
-                    children=[],
-                    children_media_class=MediaClass.DIRECTORY,
-                )
-            )
-            return root
-        if media_content_type == "recordings":
+        if media_content_type in [None, "main", "recordings"]:
             main = BrowseMedia(
                 title="Opnames",
                 media_class=MediaClass.DIRECTORY,
