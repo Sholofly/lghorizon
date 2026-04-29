@@ -45,6 +45,7 @@ from lghorizon import (
     LGHorizonApi,
     LGHorizonMediaType,
     LGHorizonSourceType,
+    MEDIA_KEY_TV,
 )
 
 from .const import (
@@ -690,10 +691,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
             if self._device.device_state.source_type != LGHorizonSourceType.LINEAR:
                 await asyncio.sleep(1)
-                await self._device.send_key_to_box("TV")
+                await self._device.send_key_to_box(MEDIA_KEY_TV)
 
             for digit in media_id:
-                await self._device.send_key_to_box(f"{digit}")
+                await self._device.send_key_to_box(digit)
 
         else:
             _LOGGER.error("Unsupported media type")
