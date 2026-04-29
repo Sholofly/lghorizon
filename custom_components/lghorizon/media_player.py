@@ -465,13 +465,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
     @property
     def source(self):
         """Name of the current channel."""
-        state = self._device.device_state
-        if state.channel_name and state.channel_id:
-            # Find the channel number for the current channel
-            channel = self._channels.get(state.channel_id)
-            if channel:
-                return f"{channel.channel_number}. {state.channel_name}"
-        return state.channel_name
+        return self._device.device_state.channel_name
 
     @property
     def source_list(self):
@@ -490,11 +484,19 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 ch for ch in channels if str(ch.channel_number) not in excluded_set
             ]
 
+        # Deduplicate by name: keep channel with the lowest number
+        seen: dict[str, object] = {}
+        for ch in channels:
+            num = int(ch.channel_number)
+            if ch.title not in seen or num < int(seen[ch.title].channel_number):
+                seen[ch.title] = ch
+        channels = list(seen.values())
+
         if sort_mode == "number":
             sorted_channels = sorted(channels, key=lambda ch: int(ch.channel_number))
         else:
             sorted_channels = sorted(channels, key=lambda ch: ch.title.lower())
-        return [f"{ch.channel_number}. {ch.title}" for ch in sorted_channels]
+        return [ch.title for ch in sorted_channels]
 
     async def async_added_to_hass(self):
         """Use lifecycle hooks."""
@@ -640,14 +642,15 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
     async def async_select_source(self, source: str) -> None:
         """Select a new source."""
-        # Source format is "number. name" — extract number and use set_channel_by_number
-        if ". " in source:
-            channel_number = source.split(". ", 1)[0]
-            try:
-                await self._device.set_channel_by_number(channel_number)
-                return
-            except (ValueError, AttributeError):
-                pass
+        # Find channel by name; if duplicates exist, pick the lowest number
+        match = None
+        for ch in self._channels.values():
+            if ch.title == source:
+                if match is None or int(ch.channel_number) < int(match.channel_number):
+                    match = ch
+        if match:
+            await self._device.set_channel_by_number(match.channel_number)
+            return
         # Fallback to set_channel by name
         await self._device.set_channel(source)
 
