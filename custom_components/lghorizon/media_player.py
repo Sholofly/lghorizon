@@ -45,6 +45,7 @@ from lghorizon import (
     LGHorizonApi,
     LGHorizonMediaType,
     LGHorizonSourceType,
+    MEDIA_KEY_TV,
 )
 
 from .const import (
@@ -483,6 +484,14 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 ch for ch in channels if str(ch.channel_number) not in excluded_set
             ]
 
+        # Deduplicate by name: keep channel with the lowest number
+        seen: dict[str, object] = {}
+        for ch in channels:
+            num = int(ch.channel_number)
+            if ch.title not in seen or num < int(seen[ch.title].channel_number):
+                seen[ch.title] = ch
+        channels = list(seen.values())
+
         if sort_mode == "number":
             sorted_channels = sorted(channels, key=lambda ch: int(ch.channel_number))
         else:
@@ -633,6 +642,16 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
     async def async_select_source(self, source: str) -> None:
         """Select a new source."""
+        # Find channel by name; if duplicates exist, pick the lowest number
+        match = None
+        for ch in self._channels.values():
+            if ch.title == source:
+                if match is None or int(ch.channel_number) < int(match.channel_number):
+                    match = ch
+        if match:
+            await self._device.set_channel_by_number(match.channel_number)
+            return
+        # Fallback to set_channel by name
         await self._device.set_channel(source)
 
     async def async_media_play(self):
@@ -675,10 +694,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
             if self._device.device_state.source_type != LGHorizonSourceType.LINEAR:
                 await asyncio.sleep(1)
-                await self._device.send_key_to_box("TV")
+                await self._device.send_key_to_box(MEDIA_KEY_TV)
 
             for digit in media_id:
-                await self._device.send_key_to_box(f"{digit}")
+                await self._device.send_key_to_box(digit)
 
         else:
             _LOGGER.error("Unsupported media type")
