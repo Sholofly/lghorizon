@@ -16,7 +16,7 @@
   ],
   "ssdp": [
     {
-      "deviceType": "urn:schemas-upnp-org:device:tvdevice:1",
+      "st": "urn:dial-multiscreen-org:service:dial:1",
       "manufacturer": "Mediabox"
     }
   ],
