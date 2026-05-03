@@ -8,6 +8,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.helpers.service_info.ssdp import SsdpServiceInfo
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.typing import Mapping
@@ -76,6 +77,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     _profiles = []
     _username = ""
     _country_code = ""
+    _discovered_name = ""
+    _discovered_model = ""
 
     async def async_step_reauth(
         self, entry_data: Mapping[str, Any]
@@ -84,6 +87,48 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._username = entry_data[CONF_USERNAME]
         self._country_code = entry_data[CONF_COUNTRY_CODE]
         return await self.async_step_reauth_confirm()
+
+    async def async_step_ssdp(
+        self, discovery_info: SsdpServiceInfo
+    ) -> config_entries.ConfigFlowResult:
+        """Handle discovery of an LG Horizon device via SSDP."""
+        _LOGGER.debug("SSDP discovery: %s", discovery_info)
+
+        # Abort if any lghorizon entry is already configured
+        if self._async_current_entries():
+            return self.async_abort(reason="already_configured")
+
+        # Use the UDN as unique ID for this discovery flow
+        udn = discovery_info.upnp.get("UDN", "")
+        if not udn:
+            return self.async_abort(reason="incomplete_discovery")
+
+        await self.async_set_unique_id(udn)
+        self._abort_if_unique_id_configured()
+
+        # Store discovery info for the confirm step
+        friendly_name = discovery_info.upnp.get("friendlyName", "LG Horizon")
+        model_name = discovery_info.upnp.get("modelName", "")
+        self.context["title_placeholders"] = {"name": friendly_name}
+        self._discovered_name = friendly_name
+        self._discovered_model = model_name
+
+        return await self.async_step_ssdp_confirm()
+
+    async def async_step_ssdp_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Confirm SSDP discovery and proceed to normal setup."""
+        if user_input is not None:
+            return await self.async_step_user()
+
+        return self.async_show_form(
+            step_id="ssdp_confirm",
+            description_placeholders={
+                "name": self._discovered_name,
+                "model": self._discovered_model,
+            },
+        )
 
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None

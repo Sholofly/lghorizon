@@ -10,6 +10,10 @@
           "username": "Gebruikersnaam"
         }
       },
+      "ssdp_confirm": {
+        "title": "LG Horizon apparaat gevonden",
+        "description": "Er is een LG Horizon apparaat gevonden op je netwerk:\n\n**{name}** ({model})\n\nWil je de LG Horizon integratie instellen?"
+      },
       "credentials": {
         "title": "LG Horizon - Authenticatiegegevens",
         "description": "Vul de authenticatiegegevens van je Ziggo, Telenet, UPC/Sunrise, Magenta of Virgin account in.",
@@ -41,7 +45,8 @@
     },
     "abort": {
       "already_configured": "Dit account is reeds toegevoegd.",
-      "reauth_successful": "Herauthenticatie geslaagd"
+      "reauth_successful": "Herauthenticatie geslaagd",
+      "incomplete_discovery": "Onvolledige discovery informatie."
     }
   },
   "options": {
