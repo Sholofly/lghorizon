@@ -53,6 +53,7 @@ from .const import (
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
     CONF_REMOTE_KEY,
+    CONF_SELECTED_DEVICES,
     DOMAIN,
     FAST_FORWARD,
     RECORD,
@@ -94,8 +95,12 @@ async def async_setup_entry(
     players = []
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
     device_dic: dict[str, LGHorizonDevice] = await api.get_devices()
+
+    # Filter devices based on selection (empty/missing = all devices for backwards compat)
+    selected_devices = entry.data.get(CONF_SELECTED_DEVICES, [])
     for device in device_dic.values():
-        players.append(LGHorizonMediaPlayer(device, api, hass, entry))
+        if not selected_devices or device.device_id in selected_devices:
+            players.append(LGHorizonMediaPlayer(device, api, hass, entry))
     async_add_entities(players, True)
 
     platform = entity_platform.async_get_current_platform()

@@ -46,6 +46,7 @@ from .const import (
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
     CONF_INTERRUPT_APP,
+    CONF_SELECTED_DEVICES,
 )
 
 
@@ -75,6 +76,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     customer: LGHorizonCustomer = None
     _channels = []
     _profiles = []
+    _devices = {}
     _username = ""
     _country_code = ""
     _discovered_name = ""
@@ -272,7 +274,68 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id="credentials", data_schema=cred_schema, errors=errors
             )
-        return await self.async_step_profile()
+
+        # SSDP flow: auto-match discovered device by friendlyName
+        if self._discovered_name:
+            matched_id = None
+            for device in self._devices.values():
+                if device.device_friendly_name == self._discovered_name:
+                    matched_id = device.device_id
+                    break
+            # If match found, auto-select that single device
+            if matched_id:
+                self.CONFIG_DATA[CONF_SELECTED_DEVICES] = [matched_id]
+            else:
+                # No match found — select all devices as fallback
+                _LOGGER.warning(
+                    "SSDP discovered '%s' but no matching device found in account. "
+                    "Adding all devices.",
+                    self._discovered_name,
+                )
+                self.CONFIG_DATA[CONF_SELECTED_DEVICES] = list(self._devices.keys())
+            return await self.async_step_profile()
+
+        # Manual flow: show device selection step
+        return await self.async_step_devices()
+
+    async def async_step_devices(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Select which set-top boxes to add."""
+        if user_input is not None:
+            selected = user_input.get(CONF_SELECTED_DEVICES, [])
+            # If nothing selected, add all devices (safety net)
+            if not selected:
+                selected = list(self._devices.keys())
+            self.CONFIG_DATA[CONF_SELECTED_DEVICES] = selected
+            return await self.async_step_profile()
+
+        device_selectors = [
+            SelectOptionDict(
+                value=device.device_id,
+                label=f"{device.device_friendly_name} ({device.model or 'unknown'})",
+            )
+            for device in self._devices.values()
+        ]
+
+        # Pre-select all devices by default
+        default_selected = list(self._devices.keys())
+
+        device_schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_SELECTED_DEVICES, default=default_selected
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=device_selectors,
+                        mode=SelectSelectorMode.LIST,
+                        multiple=True,
+                    ),
+                ),
+            }
+        )
+
+        return self.async_show_form(step_id="devices", data_schema=device_schema)
 
     async def async_step_profile(
         self, user_input: dict[str, Any] | None = None
@@ -346,6 +409,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             profile_id = self.CONFIG_DATA[CONF_PROFILE_ID]
             self._profiles = await api.get_profiles()
             self._channels = await api.get_profile_channels(profile_id)
+            self._devices = await api.get_devices()
             await api.disconnect()
         except LGHorizonApiUnauthorizedError as lgau_err:
             raise InvalidAuth from lgau_err
