@@ -245,7 +245,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "ui_mode": self._device.device_state.ui_state_type,
             "play_mode": self._device.device_state.source_type,
             "channel": self._device.device_state.channel_name,
-            "recording_capacity": self._device.recording_capacity,
+            "local_recording_capacity": self._device.local_recording_capacity,
+            "has_pvr": self.api.has_pvr,
+            "has_local_dvr": self.api.has_local_dvr,
+            "has_recording": self.api.has_recording,
         }
 
         # Ad break info (real-time via 1-second checker)
