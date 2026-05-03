@@ -1,5 +1,5 @@
 name: Create release
-run-name: "Release v${{ inputs.version || '(auto)' }} (${{ inputs.bump }} bump)"
+run-name: "${{ inputs.version != '' && format('Release v{0}', inputs.version) || format('Release ({0} bump)', inputs.bump) }}"
 
 on:
   workflow_dispatch:
