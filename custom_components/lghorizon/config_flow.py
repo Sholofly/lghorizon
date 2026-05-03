@@ -303,11 +303,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Select which set-top boxes to add."""
         if user_input is not None:
+            _LOGGER.debug("Device step user_input: %s", user_input)
             selected = user_input.get(CONF_SELECTED_DEVICES, [])
+            _LOGGER.debug("Selected devices: %s (from %d available)", selected, len(self._devices))
             # If nothing selected, add all devices (safety net)
             if not selected:
                 selected = list(self._devices.keys())
             self.CONFIG_DATA[CONF_SELECTED_DEVICES] = selected
+            _LOGGER.debug("CONFIG_DATA selected_devices: %s", self.CONFIG_DATA[CONF_SELECTED_DEVICES])
             return await self.async_step_profile()
 
         device_selectors = [
@@ -389,6 +392,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         ):
             return self.async_show_form(step_id="profile", data_schema=profile_schema)
         self.CONFIG_DATA.update(user_input)
+        _LOGGER.debug(
+            "Creating entry with selected_devices=%s",
+            self.CONFIG_DATA.get(CONF_SELECTED_DEVICES),
+        )
         return self.async_create_entry(
             title=self.CONFIG_DATA[CONF_USERNAME], data=self.CONFIG_DATA
         )

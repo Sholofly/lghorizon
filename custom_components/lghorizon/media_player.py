@@ -98,9 +98,15 @@ async def async_setup_entry(
 
     # Filter devices based on selection (empty/missing = all devices for backwards compat)
     selected_devices = entry.data.get(CONF_SELECTED_DEVICES, [])
+    _LOGGER.debug(
+        "Device filter: selected_devices=%s, available=%s",
+        selected_devices,
+        list(device_dic.keys()),
+    )
     for device in device_dic.values():
         if not selected_devices or device.device_id in selected_devices:
             players.append(LGHorizonMediaPlayer(device, api, hass, entry))
+    _LOGGER.debug("Adding %d media players (of %d devices)", len(players), len(device_dic))
     async_add_entities(players, True)
 
     platform = entity_platform.async_get_current_platform()
