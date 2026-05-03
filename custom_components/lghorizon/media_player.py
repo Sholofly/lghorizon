@@ -53,6 +53,7 @@ from .const import (
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
     CONF_REMOTE_KEY,
+    CONF_SELECTED_DEVICES,
     DOMAIN,
     FAST_FORWARD,
     RECORD,
@@ -94,8 +95,18 @@ async def async_setup_entry(
     players = []
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
     device_dic: dict[str, LGHorizonDevice] = await api.get_devices()
+
+    # Filter devices based on selection (empty/missing = all devices for backwards compat)
+    selected_devices = entry.data.get(CONF_SELECTED_DEVICES, [])
+    _LOGGER.debug(
+        "Device filter: selected_devices=%s, available=%s",
+        selected_devices,
+        list(device_dic.keys()),
+    )
     for device in device_dic.values():
-        players.append(LGHorizonMediaPlayer(device, api, hass, entry))
+        if not selected_devices or device.device_id in selected_devices:
+            players.append(LGHorizonMediaPlayer(device, api, hass, entry))
+    _LOGGER.debug("Adding %d media players (of %d devices)", len(players), len(device_dic))
     async_add_entities(players, True)
 
     platform = entity_platform.async_get_current_platform()
@@ -234,7 +245,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             "ui_mode": self._device.device_state.ui_state_type,
             "play_mode": self._device.device_state.source_type,
             "channel": self._device.device_state.channel_name,
-            "recording_capacity": self._device.recording_capacity,
+            "local_recording_capacity": self._device.local_recording_capacity,
+            "has_pvr": self.api.has_pvr,
+            "has_local_dvr": self.api.has_local_dvr,
+            "has_recording": self.api.has_recording,
         }
 
         # Ad break info (real-time via 1-second checker)

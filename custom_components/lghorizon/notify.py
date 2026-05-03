@@ -7,7 +7,7 @@ from lghorizon import (
     LGHorizonRunningState,
     LGHorizonUIStateType,
 )
-from .const import DOMAIN, API, CONF_INTERRUPT_APP
+from .const import DOMAIN, API, CONF_INTERRUPT_APP, CONF_SELECTED_DEVICES
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -25,8 +25,12 @@ async def async_setup_entry(
     players = []
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
     device_dic: dict[str, LGHorizonDevice] = await api.get_devices()
+
+    # Filter devices based on selection (empty/missing = all devices for backwards compat)
+    selected_devices = entry.data.get(CONF_SELECTED_DEVICES, [])
     for device in device_dic.values():
-        players.append(LGHorizonNotifyEntity(device, entry))
+        if not selected_devices or device.device_id in selected_devices:
+            players.append(LGHorizonNotifyEntity(device, entry))
     async_add_entities(players, True)
 
 

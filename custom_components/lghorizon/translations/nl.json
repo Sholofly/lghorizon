@@ -22,6 +22,13 @@
           "refresh_token": "Refreshtoken"
         }
       },
+      "devices": {
+        "title": "LG Horizon - Selecteer apparaten",
+        "description": "Selecteer welke settopboxen je wilt toevoegen aan Home Assistant.",
+        "data": {
+          "selected_devices": "Apparaten"
+        }
+      },
       "profile": {
         "title": "LG Horizon - Selecteer profiel",
         "description": "Selecteer het profiel waarvan je de favoriete kanalen wilt tonen",
