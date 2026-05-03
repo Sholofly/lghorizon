@@ -12,13 +12,13 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sholofly/lghorizon/issues",
   "requirements": [
-    "lghorizon>=0.11.4"
+    "lghorizon>=0.12.0"
   ],
   "ssdp": [
     {
       "st": "urn:dial-multiscreen-org:service:dial:1",
       "manufacturer": "Mediabox"
     }
-  ],
-  "version": "0.11.3"
+  ]
+  "version": "0.11.1"
 }

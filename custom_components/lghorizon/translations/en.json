@@ -22,6 +22,13 @@
           "refresh_token": "Refresh token"
         }
       },
+      "devices": {
+        "title": "LG Horizon - Select devices",
+        "description": "Select which set-top boxes you want to add to Home Assistant.",
+        "data": {
+          "selected_devices": "Devices"
+        }
+      },
       "profile": {
         "title": "LG Horizon - Select profile",
         "description": "Select your profile to show it's favorite channels only",

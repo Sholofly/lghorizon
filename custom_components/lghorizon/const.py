@@ -10,6 +10,7 @@ CONF_PROFILE_ID = "profile_id"
 CONF_CHANNEL_SORT = "channel_sort"
 CONF_EXCLUDED_CHANNELS = "excluded_channels"
 CONF_INTERRUPT_APP = "interrupt_app"
+CONF_SELECTED_DEVICES = "selected_devices"
 
 
 RECORD = "record"
