@@ -8,7 +8,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.components.ssdp import SsdpServiceInfo, ATTR_UPNP_FRIENDLY_NAME, ATTR_UPNP_MANUFACTURER, ATTR_UPNP_MODEL_NAME, ATTR_UPNP_UDN
+from homeassistant.helpers.service_info.ssdp import SsdpServiceInfo
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.typing import Mapping
@@ -99,7 +99,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="already_configured")
 
         # Use the UDN as unique ID for this discovery flow
-        udn = discovery_info.upnp.get(ATTR_UPNP_UDN, "")
+        udn = discovery_info.upnp.get("UDN", "")
         if not udn:
             return self.async_abort(reason="incomplete_discovery")
 
@@ -107,8 +107,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
 
         # Store discovery info for the confirm step
-        friendly_name = discovery_info.upnp.get(ATTR_UPNP_FRIENDLY_NAME, "LG Horizon")
-        model_name = discovery_info.upnp.get(ATTR_UPNP_MODEL_NAME, "")
+        friendly_name = discovery_info.upnp.get("friendlyName", "LG Horizon")
+        model_name = discovery_info.upnp.get("modelName", "")
         self.context["title_placeholders"] = {"name": friendly_name}
         self._discovered_name = friendly_name
         self._discovered_model = model_name
