@@ -13,7 +13,7 @@ import logging
 SCAN_INTERVAL = timedelta(hours=1)
 _LOGGER = logging.getLogger(__name__)
 
-from lghorizon import LGHorizonApi, LGHorizonRecordingQuota  # noqa: E402
+from lghorizon import LGHorizonApi, LGHorizonRecordingQuota, COUNTRY_SETTINGS  # noqa: E402
 
 
 async def async_setup_entry(
@@ -91,8 +91,8 @@ class LGHorizonSensor(SensorEntity):
         """Return device info to link this sensor to the account device."""
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
-            name=f"LG Horizon ({self.username})",
-            manufacturer="LG Horizon",
+            name=self._provider_name,
+            manufacturer=self._provider_name,
             model="Account",
             entry_type=DeviceEntryType.SERVICE,
         )
@@ -103,6 +103,8 @@ class LGHorizonSensor(SensorEntity):
         self.hass = hass
         self.username = username
         self._entry = entry
+        country_code = entry.data.get(CONF_COUNTRY_CODE, "")
+        self._provider_name = COUNTRY_SETTINGS.get(country_code, {}).get("name", "LG Horizon")
 
     async def async_update(self):
         """Update the sensor."""
