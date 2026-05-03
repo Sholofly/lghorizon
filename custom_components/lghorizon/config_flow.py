@@ -81,6 +81,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     _country_code = ""
     _discovered_name = ""
     _discovered_model = ""
+    _existing_entry: config_entries.ConfigEntry | None = None
 
     async def async_step_reauth(
         self, entry_data: Mapping[str, Any]
@@ -96,22 +97,32 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle discovery of an LG Horizon device via SSDP."""
         _LOGGER.debug("SSDP discovery: %s", discovery_info)
 
-        # Abort if any lghorizon entry is already configured
-        # (the integration is account-based, not per-device)
-        if self._async_current_entries():
-            return self.async_abort(reason="already_configured")
-
-        # Use a single fixed unique ID for all SSDP discoveries,
-        # since the integration covers all devices in the account.
-        await self.async_set_unique_id(DOMAIN)
-        self._abort_if_unique_id_configured()
-
-        # Store discovery info for the confirm step
         friendly_name = discovery_info.upnp.get("friendlyName", "LG Horizon")
         model_name = discovery_info.upnp.get("modelName", "")
-        self.context["title_placeholders"] = {"name": friendly_name}
         self._discovered_name = friendly_name
         self._discovered_model = model_name
+        self.context["title_placeholders"] = {"name": friendly_name}
+
+        existing_entries = self._async_current_entries()
+
+        if existing_entries:
+            # Integration already configured — offer to add this device
+            self._existing_entry = existing_entries[0]
+            selected = self._existing_entry.data.get(CONF_SELECTED_DEVICES, [])
+
+            if not selected:
+                # Empty list = all devices already included (backwards compat)
+                return self.async_abort(reason="already_configured")
+
+            # Use discovered name as flow unique ID to prevent duplicate notifications
+            await self.async_set_unique_id(f"{DOMAIN}_add_{friendly_name}")
+            self._abort_if_unique_id_configured()
+
+            return await self.async_step_ssdp_add_device()
+
+        # No existing entry — normal first-time setup flow
+        await self.async_set_unique_id(DOMAIN)
+        self._abort_if_unique_id_configured()
 
         return await self.async_step_ssdp_confirm()
 
@@ -124,6 +135,65 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="ssdp_confirm",
+            description_placeholders={
+                "name": self._discovered_name,
+                "model": self._discovered_model,
+            },
+        )
+
+    async def async_step_ssdp_add_device(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Add an SSDP-discovered device to an existing integration entry."""
+        if user_input is not None:
+            entry = self._existing_entry
+            client_session = async_get_clientsession(self.hass)
+
+            try:
+                auth = LGHorizonAuth(
+                    client_session,
+                    entry.data[CONF_COUNTRY_CODE],
+                    entry.data.get(CONF_REFRESH_TOKEN),
+                    entry.data[CONF_USERNAME],
+                    entry.data.get(CONF_PASSWORD),
+                )
+                api = LGHorizonApi(auth, profile_id=entry.data.get(CONF_PROFILE_ID))
+                await api.initialize()
+                devices = await api.get_devices()
+                await api.disconnect()
+            except Exception:
+                _LOGGER.exception("Failed to connect while adding SSDP device")
+                return self.async_abort(reason="cannot_connect")
+
+            # Find the device matching the discovered friendlyName
+            matched_id = None
+            for device in devices.values():
+                if device.device_friendly_name == self._discovered_name:
+                    matched_id = device.device_id
+                    break
+
+            if not matched_id:
+                _LOGGER.warning(
+                    "SSDP discovered '%s' but no matching device in account",
+                    self._discovered_name,
+                )
+                return self.async_abort(reason="device_not_found")
+
+            # Check if already selected
+            selected = list(entry.data.get(CONF_SELECTED_DEVICES, []))
+            if matched_id in selected:
+                return self.async_abort(reason="already_configured")
+
+            # Add device and update the existing entry
+            selected.append(matched_id)
+            new_data = {**entry.data, CONF_SELECTED_DEVICES: selected}
+            self.hass.config_entries.async_update_entry(entry, data=new_data)
+            await self.hass.config_entries.async_reload(entry.entry_id)
+
+            return self.async_abort(reason="device_added")
+
+        return self.async_show_form(
+            step_id="ssdp_add_device",
             description_placeholders={
                 "name": self._discovered_name,
                 "model": self._discovered_model,

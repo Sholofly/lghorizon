@@ -14,6 +14,10 @@
         "title": "LG Horizon device discovered",
         "description": "An LG Horizon device was found on your network:\n\n**{name}** ({model})\n\nDo you want to set up the LG Horizon integration?"
       },
+      "ssdp_add_device": {
+        "title": "Add device to LG Horizon",
+        "description": "A new LG Horizon device was found on your network:\n\n**{name}** ({model})\n\nDo you want to add it to your existing integration?"
+      },
       "credentials": {
         "title": "LG Horizon - Authentication data",
         "description": "Enter the authentication data for your Ziggo, Telenet, UPC/Sunrise, Magenta or Virgin account.",
@@ -53,7 +57,9 @@
     "abort": {
       "already_configured": "This account is already configured.",
       "reauth_successful": "Reauthentication succesful.",
-      "incomplete_discovery": "Incomplete discovery information."
+      "incomplete_discovery": "Incomplete discovery information.",
+      "device_added": "The device has been added to your existing integration.",
+      "device_not_found": "The discovered device could not be matched to your account."
     }
   },
   "options": {
