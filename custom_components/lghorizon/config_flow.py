@@ -173,11 +173,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     break
 
             if not matched_id:
-                _LOGGER.warning(
-                    "SSDP discovered '%s' but no matching device in account",
+                _LOGGER.info(
+                    "SSDP discovered '%s' not found in existing account, "
+                    "offering new integration setup",
                     self._discovered_name,
                 )
-                return self.async_abort(reason="device_not_found")
+                return await self.async_step_ssdp_confirm()
 
             # Check if already selected
             selected = list(entry.data.get(CONF_SELECTED_DEVICES, []))
