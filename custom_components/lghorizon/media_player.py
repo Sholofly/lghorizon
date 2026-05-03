@@ -36,6 +36,7 @@ from lghorizon import (
     LGHorizonRecordingSeason,
     LGHorizonRecordingShow,
     LGHorizonRecordingSingle,
+    LGHorizonRecordingState,
     LGHorizonRecordingType,
     LGHorizonReplayChannel,
     LGHorizonRunningState,
@@ -719,12 +720,13 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             )
             recording: LGHorizonRecording
             for recording in recordings_list.recordings:
+                ongoing = recording.recording_state == LGHorizonRecordingState.ONGOING
                 match recording.type:
                     case LGHorizonRecordingType.SEASON:
                         recording.__class__ = LGHorizonRecordingSeason
                         season_recording = cast(LGHorizonRecordingSeason, recording)
                         show_media = BrowseMedia(
-                            title=season_recording.title,
+                            title=f"🔴 {season_recording.title}" if ongoing else season_recording.title,
                             media_class=MediaClass.TV_SHOW,
                             media_content_type=MediaType.TVSHOW,
                             media_content_id=f"{season_recording.show_id}|{recording.channel_id}",
@@ -739,7 +741,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         recording.__class__ = LGHorizonRecordingShow
                         show_recording = cast(LGHorizonRecordingShow, recording)
                         show_media = BrowseMedia(
-                            title=show_recording.title,
+                            title=f"🔴 {show_recording.title}" if ongoing else show_recording.title,
                             media_class=MediaClass.TV_SHOW,
                             media_content_type=MediaType.TVSHOW,
                             media_content_id=f"{show_recording.id}|{recording.channel_id}",
@@ -754,7 +756,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         recording.__class__ = LGHorizonRecordingSingle
                         single_recording = cast(LGHorizonRecordingSingle, recording)
                         show_media = BrowseMedia(
-                            title=single_recording.title,
+                            title=f"🔴 {single_recording.title}" if ongoing else single_recording.title,
                             media_class=MediaClass.EPISODE,
                             media_content_type=MediaType.EPISODE,
                             media_content_id=single_recording.id,
@@ -776,8 +778,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 single_show_recording = cast(
                     LGHorizonRecordingSingle, list_show_recording
                 )
+                ep_ongoing = list_show_recording.recording_state == LGHorizonRecordingState.ONGOING
+                ep_title = f"S{str(single_show_recording.season_number).zfill(2)}E{str(single_show_recording.episode_number).zfill(2)} {single_show_recording.episode_title or ''}"
                 show_media = BrowseMedia(
-                    title=f"S{str(single_show_recording.season_number).zfill(2)}E{str(single_show_recording.episode_number).zfill(2)} {single_show_recording.episode_title or ''}",
+                    title=f"🔴 {ep_title}" if ep_ongoing else ep_title,
                     media_class=MediaClass.EPISODE,
                     media_content_type=MediaType.EPISODE,
                     media_content_id=single_show_recording.episode_id,
