@@ -31,12 +31,12 @@ from lghorizon import (
     LGHorizonEpg,
     LGHorizonEpgEvent,
     LGHorizonEventDetail,
-    LGHorizonManagedRecordingList,
     LGHorizonRecording,
     LGHorizonRecordingList,
     LGHorizonRecordingSeason,
     LGHorizonRecordingShow,
     LGHorizonRecordingSingle,
+    LGHorizonRecordingState,
     LGHorizonRecordingType,
     LGHorizonReplayChannel,
     LGHorizonRunningState,
@@ -704,45 +704,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
     async def async_browse_media(self, media_content_type=None, media_content_id=None):
         """Support browsing media."""
-        if media_content_type in [None, "main"]:
-            root = BrowseMedia(
-                title="Media",
-                media_class=MediaClass.DIRECTORY,
-                media_content_type="main",
-                media_content_id="main",
-                can_play=False,
-                can_expand=True,
-                children=[],
-                children_media_class=MediaClass.DIRECTORY,
-            )
-            # Folder: Opnames (recorded)
-            root.children.append(
-                BrowseMedia(
-                    title="Opnames",
-                    media_class=MediaClass.DIRECTORY,
-                    media_content_type="recordings",
-                    media_content_id="recordings",
-                    can_play=False,
-                    can_expand=True,
-                    children=[],
-                    children_media_class=MediaClass.DIRECTORY,
-                )
-            )
-            # Folder: Gepland (planned/scheduled)
-            root.children.append(
-                BrowseMedia(
-                    title="Gepland",
-                    media_class=MediaClass.DIRECTORY,
-                    media_content_type="planned",
-                    media_content_id="planned",
-                    can_play=False,
-                    can_expand=True,
-                    children=[],
-                    children_media_class=MediaClass.DIRECTORY,
-                )
-            )
-            return root
-        if media_content_type == "recordings":
+        if media_content_type in [None, "main", "recordings"]:
             main = BrowseMedia(
                 title="Opnames",
                 media_class=MediaClass.DIRECTORY,
@@ -758,12 +720,13 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             )
             recording: LGHorizonRecording
             for recording in recordings_list.recordings:
+                ongoing = recording.recording_state == LGHorizonRecordingState.ONGOING
                 match recording.type:
                     case LGHorizonRecordingType.SEASON:
                         recording.__class__ = LGHorizonRecordingSeason
                         season_recording = cast(LGHorizonRecordingSeason, recording)
                         show_media = BrowseMedia(
-                            title=season_recording.title,
+                            title=f"🔴 {season_recording.title}" if ongoing else season_recording.title,
                             media_class=MediaClass.TV_SHOW,
                             media_content_type=MediaType.TVSHOW,
                             media_content_id=f"{season_recording.show_id}|{recording.channel_id}",
@@ -778,7 +741,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         recording.__class__ = LGHorizonRecordingShow
                         show_recording = cast(LGHorizonRecordingShow, recording)
                         show_media = BrowseMedia(
-                            title=show_recording.title,
+                            title=f"🔴 {show_recording.title}" if ongoing else show_recording.title,
                             media_class=MediaClass.TV_SHOW,
                             media_content_type=MediaType.TVSHOW,
                             media_content_id=f"{show_recording.id}|{recording.channel_id}",
@@ -793,7 +756,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         recording.__class__ = LGHorizonRecordingSingle
                         single_recording = cast(LGHorizonRecordingSingle, recording)
                         show_media = BrowseMedia(
-                            title=single_recording.title,
+                            title=f"🔴 {single_recording.title}" if ongoing else single_recording.title,
                             media_class=MediaClass.EPISODE,
                             media_content_type=MediaType.EPISODE,
                             media_content_id=single_recording.id,
@@ -803,49 +766,6 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                         )
                         main.children.append(show_media)
             return main
-        if media_content_type == "planned":
-            planned = BrowseMedia(
-                title="Gepland",
-                media_class=MediaClass.DIRECTORY,
-                media_content_type="planned",
-                media_content_id="planned",
-                can_play=False,
-                can_expand=True,
-                children=[],
-                children_media_class=MediaClass.DIRECTORY,
-            )
-            try:
-                managed_list: LGHorizonManagedRecordingList = (
-                    await self.api.get_managed_recordings()
-                )
-                for rec in managed_list.recordings:
-                    if rec.recording_state not in ("planned", "partiallyRecorded"):
-                        continue
-                    title_parts = []
-                    if rec.show_name:
-                        title_parts.append(rec.show_name)
-                    if rec.season_number is not None and rec.episode_number is not None:
-                        title_parts.append(
-                            f"S{str(rec.season_number).zfill(2)}E{str(rec.episode_number).zfill(2)}"
-                        )
-                    if rec.title and rec.title != rec.show_name:
-                        title_parts.append(rec.title)
-                    display_title = " - ".join(title_parts) if title_parts else rec.title
-                    if rec.recording_state == "partiallyRecorded":
-                        display_title = f"⏺ {display_title}"
-                    planned.children.append(
-                        BrowseMedia(
-                            title=display_title,
-                            media_class=MediaClass.EPISODE,
-                            media_content_type=MediaType.EPISODE,
-                            media_content_id=rec.id,
-                            can_play=False,
-                            can_expand=False,
-                        )
-                    )
-            except Exception:
-                _LOGGER.warning("Failed to fetch planned recordings", exc_info=True)
-            return planned
         if media_content_type == MediaType.TVSHOW:
             show_id, channel_id = media_content_id.split("|", 1)
             show_recordings_list: LGHorizonShowRecordingList = (
@@ -858,8 +778,10 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 single_show_recording = cast(
                     LGHorizonRecordingSingle, list_show_recording
                 )
+                ep_ongoing = list_show_recording.recording_state == LGHorizonRecordingState.ONGOING
+                ep_title = f"S{str(single_show_recording.season_number).zfill(2)}E{str(single_show_recording.episode_number).zfill(2)} {single_show_recording.episode_title or ''}"
                 show_media = BrowseMedia(
-                    title=f"S{str(single_show_recording.season_number).zfill(2)}E{str(single_show_recording.episode_number).zfill(2)} {single_show_recording.episode_title or ''}",
+                    title=f"🔴 {ep_title}" if ep_ongoing else ep_title,
                     media_class=MediaClass.EPISODE,
                     media_content_type=MediaType.EPISODE,
                     media_content_id=single_show_recording.episode_id,
