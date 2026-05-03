@@ -91,7 +91,7 @@ class LGHorizonSensor(SensorEntity):
         """Return device info to link this sensor to the account device."""
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
-            name=self._provider_name,
+            name=f"{self._provider_name} account",
             manufacturer=self._provider_name,
             model="Account",
             entry_type=DeviceEntryType.SERVICE,

@@ -396,8 +396,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "Creating entry with selected_devices=%s",
             self.CONFIG_DATA.get(CONF_SELECTED_DEVICES),
         )
+        provider_name = COUNTRY_SETTINGS.get(
+            self.CONFIG_DATA[CONF_COUNTRY_CODE], {}
+        ).get("name", "LG Horizon")
+        entry_title = f"{provider_name} ({self.CONFIG_DATA[CONF_USERNAME]})"
         return self.async_create_entry(
-            title=self.CONFIG_DATA[CONF_USERNAME], data=self.CONFIG_DATA
+            title=entry_title, data=self.CONFIG_DATA
         )
 
     async def validate_config(self, hass: HomeAssistant):
