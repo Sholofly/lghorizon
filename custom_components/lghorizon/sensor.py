@@ -4,6 +4,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_USERNAME
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.core import HomeAssistant
 from .const import API, CONF_COUNTRY_CODE, DOMAIN
 from datetime import timedelta
@@ -32,7 +33,7 @@ async def async_setup_entry(
         return
 
     username = hass.data[DOMAIN][entry.entry_id][CONF_USERNAME]
-    sensors.append(LGHorizonSensor(hass, username, api))
+    sensors.append(LGHorizonSensor(hass, username, api, entry))
     async_add_entities(sensors, True)
 
 
@@ -51,7 +52,7 @@ class LGHorizonSensor(SensorEntity):
     @property
     def name(self):
         """Return the name."""
-        return f"{self.username} Recording capacity"
+        return "Recording capacity"
 
     @property
     def icon(self):
@@ -65,22 +66,44 @@ class LGHorizonSensor(SensorEntity):
 
     @property
     def native_value(self):
-        """Return the name."""
+        """Return the state value."""
         if self._quota:
             return int(self._quota.percentage_used)
         return None
 
     @property
+    def extra_state_attributes(self):
+        """Return extra state attributes."""
+        if self._quota:
+            return {
+                "quota_mb": self._quota.quota,
+                "occupied_mb": self._quota.occupied,
+            }
+        return None
+
+    @property
     def state_class(self):
         """State class."""
-        return "total"
+        return "measurement"
 
-    def __init__(self, hass: HomeAssistant, username: str, api: LGHorizonApi) -> None:
-        """Init the media player."""
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info to link this sensor to the account device."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry.entry_id)},
+            name=f"LG Horizon ({self.username})",
+            manufacturer="LG Horizon",
+            model="Account",
+            entry_type=DeviceEntryType.SERVICE,
+        )
+
+    def __init__(self, hass: HomeAssistant, username: str, api: LGHorizonApi, entry: ConfigEntry) -> None:
+        """Init the sensor."""
         self.api = api
         self.hass = hass
         self.username = username
+        self._entry = entry
 
     async def async_update(self):
-        """Update the box."""
+        """Update the sensor."""
         self._quota = await self.api.get_recording_quota()
