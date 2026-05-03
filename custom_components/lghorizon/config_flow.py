@@ -121,7 +121,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return await self.async_step_ssdp_add_device()
 
         # No existing entry — normal first-time setup flow
-        await self.async_set_unique_id(DOMAIN)
+        await self.async_set_unique_id(f"{DOMAIN}_{friendly_name}")
         self._abort_if_unique_id_configured()
 
         return await self.async_step_ssdp_confirm()
@@ -131,6 +131,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> config_entries.ConfigFlowResult:
         """Confirm SSDP discovery and proceed to normal setup."""
         if user_input is not None:
+            # Re-check: another SSDP flow may have completed in the meantime
+            existing_entries = self._async_current_entries()
+            if existing_entries:
+                self._existing_entry = existing_entries[0]
+                return await self.async_step_ssdp_add_device()
             return await self.async_step_user()
 
         return self.async_show_form(
