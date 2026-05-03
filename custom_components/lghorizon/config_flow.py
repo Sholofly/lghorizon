@@ -95,15 +95,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug("SSDP discovery: %s", discovery_info)
 
         # Abort if any lghorizon entry is already configured
+        # (the integration is account-based, not per-device)
         if self._async_current_entries():
             return self.async_abort(reason="already_configured")
 
-        # Use the UDN as unique ID for this discovery flow
-        udn = discovery_info.upnp.get("UDN", "")
-        if not udn:
-            return self.async_abort(reason="incomplete_discovery")
-
-        await self.async_set_unique_id(udn)
+        # Use a single fixed unique ID for all SSDP discoveries,
+        # since the integration covers all devices in the account.
+        await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()
 
         # Store discovery info for the confirm step
