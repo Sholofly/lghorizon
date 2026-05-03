@@ -5,11 +5,20 @@
     "@Sholofly"
   ],
   "config_flow": true,
+  "dependencies": [
+    "ssdp"
+  ],
   "documentation": "https://github.com/Sholofly/lghorizon",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sholofly/lghorizon/issues",
   "requirements": [
     "lghorizon>=0.11.4"
+  ],
+  "ssdp": [
+    {
+      "deviceType": "urn:schemas-upnp-org:device:tvdevice:1",
+      "manufacturer": "Mediabox"
+    }
   ],
   "version": "0.11.3"
 }
