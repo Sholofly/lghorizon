@@ -11,6 +11,7 @@ CONF_CHANNEL_SORT = "channel_sort"
 CONF_EXCLUDED_CHANNELS = "excluded_channels"
 CONF_INTERRUPT_APP = "interrupt_app"
 CONF_SELECTED_DEVICES = "selected_devices"
+CONF_DEVICE_NAMES = "device_names"
 
 
 RECORD = "record"

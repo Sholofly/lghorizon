@@ -18,6 +18,7 @@ from .const import (
     CONF_COUNTRY_CODE,
     CONF_PROFILE_ID,
     CONF_REFRESH_TOKEN,
+    CONF_DEVICE_NAMES,
     DOMAIN,
     CONF_INTERRUPT_APP,
 )
@@ -117,6 +118,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if "unauthorized" in str(err).lower() or "invalid token" in str(err).lower() or "refresh token" in str(err).lower():
             raise ConfigEntryAuthFailed("Token expired, reauthentication required") from err
         raise
+
+    # Keep device_names mapping up-to-date for SSDP discovery checks
+    devices = await api.get_devices()
+    device_names = {d.device_id: d.device_friendly_name for d in devices.values()}
+    if device_names != entry.data.get(CONF_DEVICE_NAMES, {}):
+        new_data = {**entry.data, CONF_DEVICE_NAMES: device_names}
+        hass.config_entries.async_update_entry(entry, data=new_data)
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
