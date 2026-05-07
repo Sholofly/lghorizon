@@ -47,6 +47,7 @@ from .const import (
     CONF_EXCLUDED_CHANNELS,
     CONF_INTERRUPT_APP,
     CONF_SELECTED_DEVICES,
+    CONF_DEVICE_NAMES,
 )
 
 
@@ -106,12 +107,20 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         existing_entries = self._async_current_entries()
 
         if existing_entries:
-            # Integration already configured — offer to add this device
+            # Integration already configured — check if device is already known
             self._existing_entry = existing_entries[0]
             selected = self._existing_entry.data.get(CONF_SELECTED_DEVICES, [])
 
             if not selected:
                 # Empty list = all devices already included (backwards compat)
+                return self.async_abort(reason="already_configured")
+
+            # Check if discovered device is already in the selected devices
+            device_names = self._existing_entry.data.get(CONF_DEVICE_NAMES, {})
+            selected_names = [
+                device_names[did] for did in selected if did in device_names
+            ]
+            if friendly_name in selected_names:
                 return self.async_abort(reason="already_configured")
 
             # Use discovered name as flow unique ID to prevent duplicate notifications
@@ -192,7 +201,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             # Add device and update the existing entry
             selected.append(matched_id)
-            new_data = {**entry.data, CONF_SELECTED_DEVICES: selected}
+            # Update device names mapping
+            device_names = dict(entry.data.get(CONF_DEVICE_NAMES, {}))
+            for device in devices.values():
+                device_names[device.device_id] = device.device_friendly_name
+            new_data = {
+                **entry.data,
+                CONF_SELECTED_DEVICES: selected,
+                CONF_DEVICE_NAMES: device_names,
+            }
             self.hass.config_entries.async_update_entry(entry, data=new_data)
             await self.hass.config_entries.async_reload(entry.entry_id)
 
@@ -369,6 +386,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self._discovered_name,
                 )
                 self.CONFIG_DATA[CONF_SELECTED_DEVICES] = list(self._devices.keys())
+            # Store device name mapping for future SSDP checks
+            self.CONFIG_DATA[CONF_DEVICE_NAMES] = {
+                d.device_id: d.device_friendly_name
+                for d in self._devices.values()
+            }
             return await self.async_step_profile()
 
         # Manual flow: show device selection step
@@ -386,6 +408,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not selected:
                 selected = list(self._devices.keys())
             self.CONFIG_DATA[CONF_SELECTED_DEVICES] = selected
+            # Store device name mapping for future SSDP checks
+            self.CONFIG_DATA[CONF_DEVICE_NAMES] = {
+                d.device_id: d.device_friendly_name
+                for d in self._devices.values()
+            }
             _LOGGER.debug("CONFIG_DATA selected_devices: %s", self.CONFIG_DATA[CONF_SELECTED_DEVICES])
             return await self.async_step_profile()
 
