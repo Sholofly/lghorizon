@@ -6,6 +6,7 @@ import pytest
 from homeassistant.config_entries import ConfigEntryState, SOURCE_REAUTH
 from homeassistant.core import HomeAssistant
 from lghorizon import (
+    LGHorizonAuth,
     LGHorizonApiConnectionError,
     LGHorizonApiLockedError,
     LGHorizonApiUnauthorizedError,
@@ -107,3 +108,48 @@ async def test_connection_error_message_no_longer_triggers_reauth(
 
     assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
     assert not hass.config_entries.flow.async_progress_by_handler("lghorizon")
+
+
+async def test_rejected_credentials_while_running_start_reauth(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_api: MagicMock
+) -> None:
+    """The library reports a revoked token; the user is asked to log in again."""
+    auths = []
+
+    def capture_auth(*args, **kwargs):
+        auth = LGHorizonAuth(*args, **kwargs)
+        auths.append(auth)
+        return auth
+
+    mock_config_entry.add_to_hass(hass)
+    with patch("custom_components.lghorizon.LGHorizonAuth", side_effect=capture_auth):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert not hass.config_entries.flow.async_progress_by_handler("lghorizon")
+
+    auths[0].auth_failure_callback()
+    await hass.async_block_till_done()
+
+    flows = hass.config_entries.flow.async_progress_by_handler("lghorizon")
+    assert [f["context"]["source"] for f in flows] == [SOURCE_REAUTH]
+
+
+async def test_no_reauth_callback_when_setup_fails(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_api: MagicMock
+) -> None:
+    """A failed login during setup is handled by setup itself, not the callback."""
+    mock_api.initialize.side_effect = LGHorizonApiConnectionError("down")
+    auths = []
+
+    def capture_auth(*args, **kwargs):
+        auth = LGHorizonAuth(*args, **kwargs)
+        auths.append(auth)
+        return auth
+
+    mock_config_entry.add_to_hass(hass)
+    with patch("custom_components.lghorizon.LGHorizonAuth", side_effect=capture_auth):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert auths[0].auth_failure_callback is None

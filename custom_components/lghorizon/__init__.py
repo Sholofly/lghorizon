@@ -118,6 +118,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady("Unable to connect to the LG Horizon API") from err
     entry.async_on_unload(api.disconnect)
 
+    @callback
+    def _start_reauth() -> None:
+        """Ask for new credentials when the provider rejects the current ones."""
+        entry.async_start_reauth(hass)
+
+    auth.auth_failure_callback = _start_reauth
+
     # Keep device_names mapping up-to-date for SSDP discovery checks
     devices = await api.get_devices()
     device_names = {d.device_id: d.device_friendly_name for d in devices.values()}
