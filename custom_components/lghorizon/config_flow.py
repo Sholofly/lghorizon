@@ -28,6 +28,7 @@ import homeassistant.helpers.config_validation as cv
 
 
 from lghorizon import (
+    LGHorizonApiError,
     LGHorizonApiUnauthorizedError,
     LGHorizonApiConnectionError,
     LGHorizonApiLockedError,
@@ -175,7 +176,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await api.initialize()
                 devices = await api.get_devices()
                 await api.disconnect()
-            except Exception:
+            except (LGHorizonApiError, LGHorizonApiUnauthorizedError):
                 _LOGGER.exception("Failed to connect while adding SSDP device")
                 return self.async_abort(reason="cannot_connect")
 
@@ -531,9 +532,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             raise InvalidAuth from lgau_err
         except LGHorizonApiConnectionError as lgac_err:
             raise CannotConnect from lgac_err
-        except Exception as ex:
-            _LOGGER.error(ex)
-            raise CannotConnect from ex
 
     @staticmethod
     @callback
