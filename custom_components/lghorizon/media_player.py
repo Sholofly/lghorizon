@@ -27,6 +27,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 from lghorizon import (
+    LGHorizonApiError,
+    LGHorizonApiUnauthorizedError,
     LGHorizonDevice,
     LGHorizonEpg,
     LGHorizonEpgEvent,
@@ -158,6 +160,17 @@ async def async_setup_entry(
         default_service_schema,
         handle_default_services,
     )
+
+
+# Optional data (replay channels, EPG, event details) is fetched on a best-effort
+# basis: API failures and unexpected payloads are logged, anything else is a bug.
+_FETCH_ERRORS = (
+    LGHorizonApiError,
+    LGHorizonApiUnauthorizedError,
+    KeyError,
+    TypeError,
+    ValueError,
+)
 
 
 class LGHorizonMediaPlayer(MediaPlayerEntity):
@@ -592,7 +605,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 "Replay channels loaded: %d channels support replay",
                 len(store["replay_channel_ids"]),
             )
-        except Exception:
+        except _FETCH_ERRORS:
             _LOGGER.warning("Failed to fetch replay channels", exc_info=True)
             store["replay_channel_ids"] = set()
 
@@ -609,7 +622,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 "EPG refreshed: %d channels loaded",
                 len(store["epg"].entries) if store["epg"] else 0,
             )
-        except Exception:
+        except _FETCH_ERRORS:
             _LOGGER.warning("Failed to refresh EPG data", exc_info=True)
 
     async def async_update(self):
@@ -642,7 +655,7 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
                 cache.clear()
             cache[event_id] = detail
             return detail
-        except Exception:
+        except _FETCH_ERRORS:
             _LOGGER.warning("Failed to fetch event detail for %s", event_id, exc_info=True)
             return None
 
