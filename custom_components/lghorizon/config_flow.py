@@ -243,15 +243,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await api.initialize()
                 await api.disconnect()
 
-            except LGHorizonApiUnauthorizedError as lgau_err:
-                raise InvalidAuth from lgau_err
-            except LGHorizonApiConnectionError as lgac_err:
-                raise CannotConnect from lgac_err
-            except LGHorizonApiLockedError as lgal_err:
-                raise AccountLocked from lgal_err
-            except Exception as ex:
-                _LOGGER.error(ex)
-                raise CannotConnect from ex
+            except LGHorizonApiLockedError:
+                errors["base"] = "account_locked"
+            except LGHorizonApiUnauthorizedError:
+                errors["base"] = "invalid_auth"
+            except LGHorizonApiConnectionError:
+                errors["base"] = "cannot_connect"
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
             else:
                 await self.async_set_unique_id(self.unique_id)
                 self._abort_if_unique_id_mismatch(reason="wrong_account")
@@ -525,12 +525,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._channels = await api.get_profile_channels(profile_id)
             self._devices = await api.get_devices()
             await api.disconnect()
+        except LGHorizonApiLockedError as lgal_err:
+            raise AccountLocked from lgal_err
         except LGHorizonApiUnauthorizedError as lgau_err:
             raise InvalidAuth from lgau_err
         except LGHorizonApiConnectionError as lgac_err:
             raise CannotConnect from lgac_err
-        except LGHorizonApiLockedError as lgal_err:
-            raise AccountLocked from lgal_err
         except Exception as ex:
             _LOGGER.error(ex)
             raise CannotConnect from ex
