@@ -7,7 +7,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from lghorizon import LGHorizonApi, LGHorizonAuth, COUNTRY_SETTINGS
@@ -115,9 +115,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except LGHorizonApiUnauthorizedError as err:
         raise ConfigEntryAuthFailed("Authentication failed, reauthentication required") from err
     except LGHorizonApiConnectionError as err:
-        if "unauthorized" in str(err).lower() or "invalid token" in str(err).lower() or "refresh token" in str(err).lower():
-            raise ConfigEntryAuthFailed("Token expired, reauthentication required") from err
-        raise
+        raise ConfigEntryNotReady("Unable to connect to the LG Horizon API") from err
+    entry.async_on_unload(api.disconnect)
 
     # Keep device_names mapping up-to-date for SSDP discovery checks
     devices = await api.get_devices()
