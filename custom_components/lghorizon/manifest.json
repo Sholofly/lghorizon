@@ -7,7 +7,7 @@
   "documentation": "https://github.com/Sholofly/lghorizon",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/Sholofly/lghorizon/issues",
-  "requirements": ["lghorizon>=0.12.6"],
+  "requirements": ["lghorizon>=0.12.7"],
   "ssdp": [
     {
       "st": "urn:dial-multiscreen-org:service:dial:1",
