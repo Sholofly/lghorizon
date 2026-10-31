@@ -118,7 +118,7 @@ async def async_setup_entry(
         _LOGGER.debug(
             "Service %s was called for box %s", call.service, entity.unique_id
         )
-        devices = await api.get_devices()
+        devices = await entity.api.get_devices()
         device = devices[entity.unique_id]
         if call.service == REWIND:
             await device.rewind()
