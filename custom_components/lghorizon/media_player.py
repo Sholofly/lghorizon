@@ -29,6 +29,7 @@ from homeassistant.util import dt as dt_util
 from lghorizon import (
     LGHorizonApiError,
     LGHorizonApiUnauthorizedError,
+    LGHorizonChannel,
     LGHorizonDevice,
     LGHorizonEpg,
     LGHorizonEpgEvent,
@@ -494,9 +495,8 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         """Name of the current channel."""
         return self._device.device_state.channel_name
 
-    @property
-    def source_list(self):
-        """Return a list with available sources."""
+    def _visible_channels(self) -> list[LGHorizonChannel]:
+        """Return the channels that are not excluded, in the configured order."""
         # Prefer runtime options (entry.options) over initial setup data (entry.data)
         sort_mode = self.entry.options.get(
             CONF_CHANNEL_SORT, self.entry.data.get(CONF_CHANNEL_SORT, "number")
@@ -504,26 +504,28 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         excluded_channels = self.entry.data.get(CONF_EXCLUDED_CHANNELS) or []
         # Use a set of strings so we can compare reliably to channel_number
         excluded_set = {str(ch) for ch in excluded_channels}
-        channels = self._channels.values() or {}
+        channels = list(self._channels.values())
         # Filter out excluded channels by channel number
         if excluded_set:
             channels = [
                 ch for ch in channels if str(ch.channel_number) not in excluded_set
             ]
-
-        # Deduplicate by name: keep channel with the lowest number
-        seen: dict[str, object] = {}
-        for ch in channels:
-            num = int(ch.channel_number)
-            if ch.title not in seen or num < int(seen[ch.title].channel_number):
-                seen[ch.title] = ch
-        channels = list(seen.values())
-
         if sort_mode == "number":
-            sorted_channels = sorted(channels, key=lambda ch: int(ch.channel_number))
-        else:
-            sorted_channels = sorted(channels, key=lambda ch: ch.title.lower())
-        return [ch.title for ch in sorted_channels]
+            return sorted(channels, key=lambda ch: int(ch.channel_number))
+        return sorted(channels, key=lambda ch: ch.title.lower())
+
+    @property
+    def source_list(self):
+        """Return a list with available sources."""
+        visible = self._visible_channels()
+        # Deduplicate by name: keep the channel with the lowest number
+        lowest: dict[str, LGHorizonChannel] = {}
+        for ch in visible:
+            current = lowest.get(ch.title)
+            if current is None or int(ch.channel_number) < int(current.channel_number):
+                lowest[ch.title] = ch
+        kept = {id(ch) for ch in lowest.values()}
+        return [ch.title for ch in visible if id(ch) in kept]
 
     async def async_added_to_hass(self):
         """Use lifecycle hooks."""
@@ -705,6 +707,21 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         """Send seek command."""
         await self._device.set_player_position(int(position * 1000))
 
+    def _channel_number_from_media_id(self, media_id: str) -> str | None:
+        """Return the channel number for a channel number or a channel id."""
+        channel = self._channels.get(media_id)
+        if channel is not None:
+            return str(channel.channel_number)
+        try:
+            cv.positive_int(media_id)
+        except vol.Invalid:
+            _LOGGER.error(
+                "Media ID %s is not a channel number or the id of a known channel",
+                media_id,
+            )
+            return None
+        return str(media_id)
+
     async def async_play_media(self, media_type, media_id, **kwargs):
         """Support changing a channel."""
         if media_type == MediaType.EPISODE:
@@ -712,18 +729,15 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
         elif media_type == MediaType.APP:
             await self._device.set_channel(media_id)
         elif media_type == MediaType.CHANNEL:
-            # media_id should only be a channel number
-            try:
-                cv.positive_int(media_id)
-            except vol.Invalid:
-                _LOGGER.error("Media ID must be positive integer")
+            channel_number = self._channel_number_from_media_id(media_id)
+            if channel_number is None:
                 return
 
             if self._device.device_state.source_type != LGHorizonSourceType.LINEAR:
                 await asyncio.sleep(1)
                 await self._device.send_key_to_box(MEDIA_KEY_TV)
 
-            for digit in media_id:
+            for digit in channel_number:
                 await self._device.send_key_to_box(digit)
 
         else:
@@ -731,7 +745,55 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
 
     async def async_browse_media(self, media_content_type=None, media_content_id=None):
         """Support browsing media."""
-        if media_content_type in [None, "main", "recordings"]:
+        if media_content_type in [None, "main"]:
+            return BrowseMedia(
+                title="LG Horizon",
+                media_class=MediaClass.DIRECTORY,
+                media_content_type="main",
+                media_content_id="main",
+                can_play=False,
+                can_expand=True,
+                children=[
+                    BrowseMedia(
+                        title=title,
+                        media_class=MediaClass.DIRECTORY,
+                        media_content_type=content_type,
+                        media_content_id=content_type,
+                        can_play=False,
+                        can_expand=True,
+                    )
+                    for title, content_type in (
+                        ("Opnames", "recordings"),
+                        ("Kanalen", "channels"),
+                    )
+                ],
+                children_media_class=MediaClass.DIRECTORY,
+            )
+        if media_content_type == "channels":
+            return BrowseMedia(
+                title="Kanalen",
+                media_class=MediaClass.DIRECTORY,
+                media_content_type="channels",
+                media_content_id="channels",
+                can_play=False,
+                can_expand=True,
+                children=[
+                    BrowseMedia(
+                        title=f"{channel.channel_number} · {channel.title}",
+                        # The frontend shows channels in tall tiles and crops
+                        # the wide logos; "app" tiles show the whole logo.
+                        media_class=MediaClass.APP,
+                        media_content_type=MediaType.CHANNEL,
+                        media_content_id=channel.id,
+                        can_play=True,
+                        can_expand=False,
+                        thumbnail=channel.logo_image or None,
+                    )
+                    for channel in self._visible_channels()
+                ],
+                children_media_class=MediaClass.APP,
+            )
+        if media_content_type == "recordings":
             main = BrowseMedia(
                 title="Opnames",
                 media_class=MediaClass.DIRECTORY,
