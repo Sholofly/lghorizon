@@ -101,6 +101,34 @@ async def test_service_reaches_the_device_of_the_current_setup_after_a_reload(
 
 
 @pytest.mark.parametrize(
+    ("given", "sent"),
+    [
+        pytest.param("CHANNELUP", "ChannelUp", id="upper-case"),
+        pytest.param("channelup", "ChannelUp", id="lower-case"),
+        pytest.param("ChannelUp", "ChannelUp", id="exact"),
+        pytest.param("tv", "TV", id="tv"),
+        pytest.param("Settings", "Settings", id="unknown-key-is-sent-as-is"),
+    ],
+)
+async def test_remote_key_press_uses_the_name_the_box_expects(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    two_apis,
+    given: str,
+    sent: str,
+) -> None:
+    first_device, _, _ = two_apis
+    entity_id = await set_up(hass, mock_config_entry)
+    await hass.services.async_call(
+        "lghorizon",
+        "remote_key_press",
+        {"entity_id": entity_id, "remote_key": given},
+        blocking=True,
+    )
+    first_device.send_key_to_box.assert_awaited_once_with(sent)
+
+
+@pytest.mark.parametrize(
     ("service", "method"),
     [
         pytest.param("rewind", "rewind", id="rewind"),

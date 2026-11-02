@@ -18,7 +18,7 @@ remote_key_press:
     entity_id:
       example: "media_player.tv_box_livingroom"
     remote_key:
-      example: TV
+      example: ChannelUp
 
 skip_ad_break:
   fields:
