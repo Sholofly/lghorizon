@@ -50,6 +50,7 @@ from lghorizon import (
     LGHorizonSourceType,
     MEDIA_KEY_TV,
 )
+from lghorizon import const as lghorizon_const
 
 from .const import (
     API,
@@ -66,6 +67,13 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# The box ignores key names with the wrong case ("CHANNELUP" instead of "ChannelUp").
+_REMOTE_KEYS = {
+    value.casefold(): value
+    for name, value in vars(lghorizon_const).items()
+    if name.startswith("MEDIA_KEY_")
+}
 
 # Refresh the EPG cache every 2 hours (segments are 6h each)
 EPG_REFRESH_INTERVAL = 7200
@@ -129,7 +137,12 @@ async def async_setup_entry(
             await device.record()
         elif call.service == REMOTE_KEY_PRESS:
             key = call.data[CONF_REMOTE_KEY]
-            await device.send_key_to_box(key)
+            if (known_key := _REMOTE_KEYS.get(key.casefold())) is None:
+                _LOGGER.warning(
+                    "Unknown remote key %r, sending it as is; the box ignores unknown keys",
+                    key,
+                )
+            await device.send_key_to_box(known_key or key)
         elif call.service == SKIP_AD_BREAK:
             await device.skip_ad_break()
 
