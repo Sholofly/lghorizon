@@ -19,3 +19,8 @@ REWIND = "rewind"
 FAST_FORWARD = "fast_forward"
 REMOTE_KEY_PRESS = "remote_key_press"
 SKIP_AD_BREAK = "skip_ad_break"
+
+
+def signal_device_state(device_id: str) -> str:
+    """Return the dispatcher signal sent when a box reports a new state."""
+    return f"{DOMAIN}_device_state_{device_id}"

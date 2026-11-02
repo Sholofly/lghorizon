@@ -124,7 +124,7 @@
         },
         "remote_key": {
           "name": "Remote key",
-          "description": "Key to send"
+          "description": "Key to send. Not case-sensitive. Pick one from the list, or type another W3C key name."
         }
       }
     },

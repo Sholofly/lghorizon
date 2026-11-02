@@ -23,6 +23,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import config_validation as cv, entity_platform
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
@@ -50,7 +51,6 @@ from lghorizon import (
     LGHorizonSourceType,
     MEDIA_KEY_TV,
 )
-from lghorizon import const as lghorizon_const
 
 from .const import (
     API,
@@ -64,16 +64,11 @@ from .const import (
     REMOTE_KEY_PRESS,
     REWIND,
     SKIP_AD_BREAK,
+    signal_device_state,
 )
+from .keys import resolve_remote_key
 
 _LOGGER = logging.getLogger(__name__)
-
-# The box ignores key names with the wrong case ("CHANNELUP" instead of "ChannelUp").
-_REMOTE_KEYS = {
-    value.casefold(): value
-    for name, value in vars(lghorizon_const).items()
-    if name.startswith("MEDIA_KEY_")
-}
 
 # Refresh the EPG cache every 2 hours (segments are 6h each)
 EPG_REFRESH_INTERVAL = 7200
@@ -136,13 +131,9 @@ async def async_setup_entry(
         elif call.service == RECORD:
             await device.record()
         elif call.service == REMOTE_KEY_PRESS:
-            key = call.data[CONF_REMOTE_KEY]
-            if (known_key := _REMOTE_KEYS.get(key.casefold())) is None:
-                _LOGGER.warning(
-                    "Unknown remote key %r, sending it as is; the box ignores unknown keys",
-                    key,
-                )
-            await device.send_key_to_box(known_key or key)
+            await device.send_key_to_box(
+                resolve_remote_key(call.data[CONF_REMOTE_KEY])
+            )
         elif call.service == SKIP_AD_BREAK:
             await device.skip_ad_break()
 
@@ -547,6 +538,9 @@ class LGHorizonMediaPlayer(MediaPlayerEntity):
             self._update_ad_break_checker()
             self._ad_break_active = self._is_in_ad_break()
             self.schedule_update_ha_state(True)
+            async_dispatcher_send(
+                self.hass, signal_device_state(self._device.device_id)
+            )
 
         await self._device.set_callback(state_callback)
         self._channels = await self.api.get_profile_channels()
