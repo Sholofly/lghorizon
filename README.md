@@ -169,6 +169,20 @@ data:
 
 ![Key commands](images/remote.png)
 
+Key names are not case-sensitive (`channelup` is sent as `ChannelUp`).
+
+Every box also gets a `remote` entity, which can send one or more keys with `remote.send_command`:
+
+```yaml
+action: remote.send_command
+target:
+  entity_id: remote.ziggo_beneden_remote
+data:
+  command: [ArrowDown, Enter]
+  num_repeats: 2
+  delay_secs: 1
+```
+
 ## Having issues?
 
 Please enable debug logging an create an issue on GitHub.

@@ -1,12 +1,16 @@
 """Tests for the entity services of the LG Horizon media player."""
 
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import yaml
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from lghorizon import LGHorizonDevice, LGHorizonRunningState
 from pytest_homeassistant.common import MockConfigEntry
+
+from custom_components.lghorizon.keys import REMOTE_KEYS
 
 DEVICE_JSON = {
     "deviceId": "device-1",
@@ -152,3 +156,13 @@ async def test_other_services_work_after_a_reload(
     )
 
     getattr(second_device, method).assert_awaited_once()
+
+
+def test_remote_key_selector_lists_every_key_of_the_library() -> None:
+    services = yaml.safe_load(
+        (Path(__file__).parents[1] / "custom_components/lghorizon/services.yaml").read_text()
+    )
+    options = services["remote_key_press"]["fields"]["remote_key"]["selector"]["select"][
+        "options"
+    ]
+    assert sorted(options) == sorted(REMOTE_KEYS.values())

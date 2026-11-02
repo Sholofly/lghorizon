@@ -23,7 +23,7 @@ from .const import (
     CONF_INTERRUPT_APP,
 )
 
-PLATFORMS = ["media_player", "sensor", "notify"]
+PLATFORMS = ["media_player", "remote", "sensor", "notify"]
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(

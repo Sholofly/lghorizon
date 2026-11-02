@@ -124,7 +124,7 @@
         },
         "remote_key": {
           "name": "Knop afstandsbediening",
-          "description": "De te versturen knop."
+          "description": "De te versturen knop. Hoofdletters maken niet uit. Kies uit de lijst of typ een andere W3C-toetsnaam."
         }
       }
     },

@@ -1,26 +1,96 @@
 record:
+  target:
+    entity:
+      integration: lghorizon
+      domain: media_player
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
 
 rewind:
+  target:
+    entity:
+      integration: lghorizon
+      domain: media_player
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
 
 fast_forward:
+  target:
+    entity:
+      integration: lghorizon
+      domain: media_player
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
 
 remote_key_press:
+  target:
+    entity:
+      integration: lghorizon
+      domain: media_player
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
     remote_key:
+      required: true
       example: ChannelUp
+      selector:
+        select:
+          custom_value: true
+          options:
+          - Power
+          - Standby
+          - WakeUp
+          - MediaPlay
+          - MediaPause
+          - MediaPlayPause
+          - MediaStop
+          - MediaRecord
+          - MediaFastForward
+          - MediaRewind
+          - MediaTrackNext
+          - MediaTrackPrevious
+          - ChannelUp
+          - ChannelDown
+          - MediaTopMenu
+          - Guide
+          - Help
+          - Info
+          - ContextMenu
+          - NextUserProfile
+          - TV
+          - Teletext
+          - Subtitle
+          - AudioTrack
+          - ArrowUp
+          - ArrowDown
+          - ArrowLeft
+          - ArrowRight
+          - Enter
+          - Escape
+          - Backspace
+          - Red
+          - Green
+          - Yellow
+          - Blue
+          - "0"
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+          - "5"
+          - "6"
+          - "7"
+          - "8"
+          - "9"
 
 skip_ad_break:
+  target:
+    entity:
+      integration: lghorizon
+      domain: media_player
   fields:
     entity_id:
       example: "media_player.tv_box_livingroom"
