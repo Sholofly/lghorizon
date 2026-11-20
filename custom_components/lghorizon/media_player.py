@@ -57,7 +57,6 @@ from .const import (
     CONF_CHANNEL_SORT,
     CONF_EXCLUDED_CHANNELS,
     CONF_REMOTE_KEY,
-    CONF_SELECTED_DEVICES,
     DOMAIN,
     FAST_FORWARD,
     RECORD,
@@ -66,6 +65,7 @@ from .const import (
     SKIP_AD_BREAK,
     signal_device_state,
 )
+from . import selected_devices
 from .keys import resolve_remote_key
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,20 +98,13 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Setup platform"""
-    players = []
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
     device_dic: dict[str, LGHorizonDevice] = await api.get_devices()
 
-    # Filter devices based on selection (empty/missing = all devices for backwards compat)
-    selected_devices = entry.data.get(CONF_SELECTED_DEVICES, [])
-    _LOGGER.debug(
-        "Device filter: selected_devices=%s, available=%s",
-        selected_devices,
-        list(device_dic.keys()),
-    )
-    for device in device_dic.values():
-        if not selected_devices or device.device_id in selected_devices:
-            players.append(LGHorizonMediaPlayer(device, api, hass, entry))
+    players = [
+        LGHorizonMediaPlayer(device, api, hass, entry)
+        for device in selected_devices(entry, device_dic)
+    ]
     _LOGGER.debug("Adding %d media players (of %d devices)", len(players), len(device_dic))
     async_add_entities(players, True)
 

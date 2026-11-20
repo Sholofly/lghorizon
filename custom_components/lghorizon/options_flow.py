@@ -25,6 +25,7 @@ from .const import (
     CONF_PROFILE_ID,
     CONF_REFRESH_TOKEN,
     CONF_INTERRUPT_APP,
+    CONF_SELECTED_DEVICES,
 )
 
 
@@ -50,7 +51,22 @@ class OptionsFlowHandler(OptionsFlowWithReload):
         await api.initialize()
         profile_id = self.config_entry.data[CONF_PROFILE_ID]
         channels = await api.get_profile_channels(profile_id)
+        devices = await api.get_devices()
         await api.disconnect()
+
+        device_selectors = [
+            SelectOptionDict(
+                value=device.device_id,
+                label=f"{device.device_friendly_name} ({device.model or 'unknown'})",
+            )
+            for device in devices.values()
+        ]
+        # Drop boxes the account no longer has, they cannot be selected
+        current_devices = [
+            device_id
+            for device_id in self.config_entry.data.get(CONF_SELECTED_DEVICES, [])
+            if device_id in devices
+        ] or list(devices)
 
         channel_selectors = [
             SelectOptionDict(value=str(channel.channel_number), label=channel.title)
@@ -59,6 +75,15 @@ class OptionsFlowHandler(OptionsFlowWithReload):
 
         OPTIONS_SCHEMA = vol.Schema(
             {
+                vol.Required(
+                    CONF_SELECTED_DEVICES, default=current_devices
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=device_selectors,
+                        mode=SelectSelectorMode.LIST,
+                        multiple=True,
+                    ),
+                ),
                 vol.Required(
                     CONF_CHANNEL_SORT, default=self.config_entry.data[CONF_CHANNEL_SORT]
                 ): SelectSelector(
@@ -87,6 +112,19 @@ class OptionsFlowHandler(OptionsFlowWithReload):
         )
 
         if user_input is not None:
+            # Kept in data, where setup and SSDP discovery read the selection
+            selected = user_input.pop(CONF_SELECTED_DEVICES)
+            if (
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data={**self.config_entry.data, CONF_SELECTED_DEVICES: selected},
+                )
+                and user_input == self.config_entry.options
+            ):
+                # The automatic reload only follows changed options
+                self.hass.config_entries.async_schedule_reload(
+                    self.config_entry.entry_id
+                )
             return self.async_create_entry(data=user_input)
 
         return self.async_show_form(

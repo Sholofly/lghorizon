@@ -18,7 +18,8 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from lghorizon import LGHorizonApi, LGHorizonDevice, LGHorizonRunningState
 
-from .const import API, CONF_SELECTED_DEVICES, DOMAIN, signal_device_state
+from . import selected_devices
+from .const import API, DOMAIN, signal_device_state
 from .keys import resolve_remote_key
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,11 +31,8 @@ async def async_setup_entry(
     """Set up a remote for every selected settopbox."""
     api: LGHorizonApi = hass.data[DOMAIN][entry.entry_id][API]
     devices = await api.get_devices()
-    selected_devices = entry.data.get(CONF_SELECTED_DEVICES, [])
     async_add_entities(
-        LGHorizonRemote(device)
-        for device in devices.values()
-        if not selected_devices or device.device_id in selected_devices
+        LGHorizonRemote(device) for device in selected_devices(entry, devices)
     )
 
 

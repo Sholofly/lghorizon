@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
-from lghorizon import LGHorizonApi, LGHorizonAuth, COUNTRY_SETTINGS
+from lghorizon import LGHorizonApi, LGHorizonAuth, LGHorizonDevice, COUNTRY_SETTINGS
 from lghorizon import LGHorizonApiUnauthorizedError, LGHorizonApiConnectionError
 
 from .const import (
@@ -19,6 +19,7 @@ from .const import (
     CONF_PROFILE_ID,
     CONF_REFRESH_TOKEN,
     CONF_DEVICE_NAMES,
+    CONF_SELECTED_DEVICES,
     DOMAIN,
     CONF_INTERRUPT_APP,
 )
@@ -38,6 +39,19 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 _LOGGER = logging.getLogger(__name__)
+
+
+def selected_devices(
+    entry: ConfigEntry, devices: dict[str, LGHorizonDevice]
+) -> list[LGHorizonDevice]:
+    """Return the devices to create entities for."""
+    # Empty or missing means all devices, for entries created before the selection
+    selected = entry.data.get(CONF_SELECTED_DEVICES, [])
+    return [
+        device
+        for device in devices.values()
+        if not selected or device.device_id in selected
+    ]
 
 
 async def async_migrate_entry(hass, config_entry: ConfigEntry):
@@ -131,6 +145,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if device_names != entry.data.get(CONF_DEVICE_NAMES, {}):
         new_data = {**entry.data, CONF_DEVICE_NAMES: device_names}
         hass.config_entries.async_update_entry(entry, data=new_data)
+
+    # Without this a box of another account (e.g. after reauth) fails silently
+    missing = [d for d in entry.data.get(CONF_SELECTED_DEVICES, []) if d not in devices]
+    if missing:
+        _LOGGER.warning(
+            "Selected devices %s are not available in this account (available: %s). "
+            "Change the device selection in the integration options",
+            missing,
+            list(devices),
+        )
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
