@@ -153,3 +153,24 @@ async def test_no_reauth_callback_when_setup_fails(
         await hass.async_block_till_done()
 
     assert auths[0].auth_failure_callback is None
+
+
+async def test_setup_warns_about_selected_devices_the_account_lacks(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_api: MagicMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    box = MagicMock(device_id="new-box", device_friendly_name="Living Room")
+    mock_api.get_devices.return_value = {"new-box": box}
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        data={**mock_config_entry.data, "selected_devices": ["old-box"]},
+    )
+
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert "Selected devices ['old-box'] are not available" in caplog.text
+    assert "new-box" in caplog.text

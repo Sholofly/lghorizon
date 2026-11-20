@@ -68,6 +68,7 @@
         "title": "LG Horizon - Instellingen",
         "description": "Wijzig de instellingen voor je LG Horizon integratie.",
         "data": {
+          "selected_devices": "Apparaten",
           "channel_sort": "Kanaalvolgorde",
           "excluded_channels": "Uitgesloten kanalen",
           "interrupt_app": "Toestaan dat een app gestopt wordt om notificaties te tonen. Zo nee, worden er tijdens een app geen notificaties getoond."

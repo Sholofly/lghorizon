@@ -68,6 +68,7 @@
         "title": "LG Horizon - Settings",
         "description": "Change the settings for your LG Horizon integration.",
         "data": {
+          "selected_devices": "Devices",
           "channel_sort": "Channel sort order",
           "excluded_channels": "Excluded channels",
           "interrupt_app": "Allow app to be stopped to display notifications. If not, messages will not be shown when an app is running"
